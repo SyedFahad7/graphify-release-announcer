@@ -1,0 +1,10 @@
+{
+  "html_url": "https://github.com/Graphify-Labs/graphify/releases/tag/v1.0.0",
+  "tag_name": "v1.0.0",
+  "name": "v1.0.0",
+  "draft": false,
+  "prerelease": false,
+  "published_at": "2026-08-01T10:00:00Z",
+  "author": { "login": "safishamsi" },
+  "body": "The first stable v1 release of Graphify.\n\n## New Features\n- Railpack build pack support as the successor to the old extractor\n- Instance-level MCP server, toggleable from Settings > Advanced\n- Watch-paths support for incremental graph updates\n\n## Fixes\n- Query results no longer flicker when streaming large graphs (#2001)\n- Fixed graph.html failing to load for single-node repos (#2010)\n- Deployment logs stopping mid-run\n\n## Security Fixes\n- Automatic PII/secret sanitization in exported graphs for tokens and URL passwords\n- Stricter validation of file paths during extraction\n\n## New Exports\n- FalkorDB export target\n- Obsidian vault export improvements\n\n## Breaking Changes\n- Removed the deprecated `graphify dump` command; use `graphify export json` instead\n\n## Notes\n- Railpack is currently in beta. Test it in a staging repo before switching from the old extractor.\n"
+}

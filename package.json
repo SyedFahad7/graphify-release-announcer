@@ -1,0 +1,28 @@
+{
+  "name": "graphify-release-announcer",
+  "version": "1.0.0",
+  "description": "Turns a Graphify GitHub release into a ready-to-paste, Coolify-style #production-releases Discord announcement (LLM-polished, deterministic fallback).",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "generate": "node index.js generate",
+    "latest": "node index.js latest",
+    "watch": "node index.js watch",
+    "start": "node index.js watch"
+  },
+  "keywords": [
+    "graphify",
+    "discord",
+    "release",
+    "devrel",
+    "changelog"
+  ],
+  "author": "Syed Fahad (DevRel)",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

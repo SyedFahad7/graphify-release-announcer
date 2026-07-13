@@ -1,0 +1,100 @@
+name: Release Announcer
+
+on:
+  # Checks for a new Graphify release every 30 min and posts it to #production-releases.
+  # Loosen to "0 * * * *" (hourly) if you prefer fewer runs.
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = post if new · seed = mark current latest as done (no post) · dry = build but don't post"
+        required: false
+        default: "check"
+        type: choice
+        options:
+          - "check"
+          - "seed"
+          - "dry"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: release-announcer
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore announced-state
+        id: state-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: graphify-release-announcer-state-v1
+          restore-keys: graphify-release-announcer-state-
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run announcer
+        env:
+          GITHUB_REPO: ${{ vars.GITHUB_REPO || 'Graphify-Labs/graphify' }}
+          # Built-in token — just lifts the anon rate limit for reading the public releases.
+          GITHUB_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          PRODUCTION_RELEASES_CHANNEL_ID: ${{ secrets.PRODUCTION_RELEASES_CHANNEL_ID }}
+          PRODUCTION_RELEASES_ROLE_ID: ${{ secrets.PRODUCTION_RELEASES_ROLE_ID }}
+          RELEASE_ROLE_NAME: ${{ vars.RELEASE_ROLE_NAME || 'Production Releases' }}
+          PRODUCT_NAME: ${{ vars.PRODUCT_NAME || 'Graphify' }}
+          PYPI_PACKAGE: ${{ vars.PYPI_PACKAGE || 'graphifyy' }}
+        run: |
+          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'check' }}"
+          if [ "$MODE" = "seed" ]; then
+            node index.js seed
+          elif [ "$MODE" = "dry" ]; then
+            node index.js check --dry
+          else
+            node index.js check
+          fi
+
+      # GitHub cache entries are immutable — delete before save so updated state persists.
+      - name: Delete old state cache
+        if: always() && steps.state-cache.outputs.cache-hit == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete "${{ steps.state-cache.outputs.cache-primary-key }}" --repo "${{ github.repository }}" || true
+
+      - name: Check state file exists
+        id: state-file
+        if: always()
+        run: |
+          if [ -f state.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No state.json yet (nothing announced) — skipping cache save."
+          fi
+
+      - name: Save announced-state
+        if: always() && steps.state-file.outputs.exists == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: ${{ steps.state-cache.outputs.cache-primary-key || 'graphify-release-announcer-state-v1' }}

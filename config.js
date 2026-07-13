@@ -1,0 +1,33 @@
+require('dotenv').config();
+
+function bool(v, fallback) {
+  if (v === undefined || v === '') return fallback;
+  return /^(1|true|yes|on)$/i.test(String(v).trim());
+}
+
+function int(v, fallback) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+const config = {
+  githubRepo: process.env.GITHUB_REPO || 'Graphify-Labs/graphify',
+  githubToken: process.env.GITHUB_TOKEN || '',
+
+  productName: process.env.PRODUCT_NAME || 'Graphify',
+  pypiPackage: process.env.PYPI_PACKAGE || 'graphifyy',
+  releaseEmoji: process.env.RELEASE_EMOJI || '🎉',
+
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+
+  discordToken: process.env.DISCORD_TOKEN || '',
+  channelId: process.env.PRODUCTION_RELEASES_CHANNEL_ID || '',
+  roleId: process.env.PRODUCTION_RELEASES_ROLE_ID || '',
+  roleName: process.env.RELEASE_ROLE_NAME || 'Production Releases',
+
+  maxItemsPerSection: int(process.env.MAX_ITEMS_PER_SECTION, 10),
+  keepThanks: bool(process.env.KEEP_THANKS, true),
+};
+
+module.exports = config;
