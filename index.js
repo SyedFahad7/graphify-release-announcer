@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const config = require('./config');
 const github = require('./github');
 const { parseReleaseBody } = require('./parse');
@@ -16,14 +17,36 @@ function parseFlags(argv) {
   const positional = [];
   for (const a of argv) {
     if (a === '--post') flags.post = true;
-    else if (a === '--dry') flags.dry = true;
+    else if (a === '--copy') flags.copy = true;
     else if (a === '--no-llm') flags.noLlm = true;
     else if (a === '--no-save') flags.noSave = true;
+    else if (a === '--all') flags.all = true;
     else if (a.startsWith('--interval=')) flags.interval = parseInt(a.split('=')[1], 10);
     else if (a.startsWith('--file=')) flags.file = a.split('=').slice(1).join('=');
     else positional.push(a);
   }
   return { flags, positional };
+}
+
+// Copy text to the OS clipboard so the announcement is ready to paste into Discord.
+function copyToClipboard(text) {
+  let cmd, args;
+  if (process.platform === 'win32') {
+    cmd = 'clip';
+    args = [];
+  } else if (process.platform === 'darwin') {
+    cmd = 'pbcopy';
+    args = [];
+  } else {
+    cmd = 'xclip';
+    args = ['-selection', 'clipboard'];
+  }
+  try {
+    const res = spawnSync(cmd, args, { input: text });
+    return res.status === 0;
+  } catch {
+    return false;
+  }
 }
 
 // Build { intro, sections } — LLM first, deterministic parser as fallback.
@@ -53,34 +76,36 @@ function saveOutput(release, text) {
   return file;
 }
 
+// Generate the Discord-formatted announcement for a release, print + save + (optional) copy/post.
 async function produce(release, flags) {
   console.log(`\nRelease: ${release.name} (${release.tag}) — ${release.url}`);
   if (release.prerelease) console.log('  ⚠️  this is a PRERELEASE');
   if (release.draft) console.log('  ⚠️  this is a DRAFT');
 
   const content = await buildContent(release, flags.noLlm);
-
-  // Copy-paste version (plain @mention) always written to file + console.
   const pasteText = buildAnnouncement(release, content, false);
 
   if (!flags.noSave) {
     const file = saveOutput(release, pasteText);
-    console.log(`  ↳ saved ready-to-paste announcement → ${path.relative(process.cwd(), file)}`);
+    console.log(`  ↳ saved → ${path.relative(process.cwd(), file)}`);
+  }
+  if (flags.copy) {
+    const ok = copyToClipboard(pasteText);
+    console.log(ok ? '  ↳ 📋 copied to clipboard — ready to paste into Discord' : '  ↳ clipboard copy failed');
   }
 
   console.log('\n' + '─'.repeat(72));
   console.log(pasteText);
   console.log('─'.repeat(72) + '\n');
 
-  if (flags.post && !flags.dry) {
-    const postText = buildAnnouncement(release, content, true); // real role ping
+  // Optional manual post — only if you explicitly run `post` / pass --post.
+  if (flags.post) {
+    const postText = buildAnnouncement(release, content, true);
     const n = await postAnnouncement(postText);
-    state.markAnnounced(release.tag);
-    console.log(`  ✅ posted to #production-releases (${n} message${n > 1 ? 's' : ''}).`);
-  } else if (flags.post && flags.dry) {
-    console.log('  (dry run — not posting to Discord)');
+    console.log(`  ✅ posted to Discord (${n} message${n > 1 ? 's' : ''}).`);
   }
 
+  state.markAnnounced(release.tag);
   return pasteText;
 }
 
@@ -93,52 +118,68 @@ async function cmdGenerate(positional, flags) {
   await produce(release, flags);
 }
 
-// One poll: if the latest release hasn't been announced yet, produce (+post) it.
-// Returns true if a new release was handled. Used by both `check` and `watch`.
+// Show recent releases and flag which ones you haven't generated a draft for yet.
+async function cmdList(positional, flags) {
+  const n = parseInt(positional[0], 10) || 10;
+  const releases = await github.listReleases(n);
+  console.log(`\nLatest ${releases.length} release(s) of ${config.githubRepo}:\n`);
+  for (const r of releases) {
+    const seen = state.wasAnnounced(r.tag);
+    const marker = seen ? '   ' : ' ● ';
+    const tags = [];
+    if (r.prerelease) tags.push('prerelease');
+    if (r.draft) tags.push('draft');
+    const label = tags.length ? `  [${tags.join(', ')}]` : '';
+    const date = r.publishedAt ? r.publishedAt.slice(0, 10) : '—';
+    const status = seen ? 'done' : 'NEW — no draft yet';
+    console.log(`${marker}${r.tag.padEnd(12)} ${date}  ${status}${label}`);
+  }
+  console.log(`\n● = you haven't generated an announcement for it yet.`);
+  console.log(`Run:  node index.js generate <tag>   (add --copy to copy it to your clipboard)\n`);
+}
+
+// One local check: if the latest release is new (no draft yet), generate a draft. Never posts.
 async function runOnce(flags) {
   const release = await github.getLatestRelease();
   if (state.wasAnnounced(release.tag)) {
-    console.log(`[${new Date().toISOString()}] latest ${release.tag} already handled — nothing to do.`);
+    console.log(`[${new Date().toLocaleString()}] latest is ${release.tag} — already drafted. Nothing new.`);
     return false;
   }
-  console.log(`[${new Date().toISOString()}] NEW release detected: ${release.tag}`);
-  const canPost = Boolean(config.discordToken && config.channelId) && !flags.dry;
-  await produce(release, { ...flags, post: canPost });
-  // Mark announced even in draft-only mode so a cron doesn't re-alert every run.
-  if (!canPost) state.markAnnounced(release.tag);
+  console.log(`\n🔔  NEW RELEASE: ${release.tag} — generating your Discord draft…`);
+  await produce(release, { ...flags, post: false });
+  console.log('👉  Draft is in output/ (and on your clipboard if you passed --copy). Paste it when ready.\n');
   return true;
 }
 
-// Mark the current latest release as already-announced WITHOUT posting.
-// Run this once on first setup so the cron doesn't re-announce an existing release.
+// Mark the current latest release as already-handled WITHOUT generating a draft,
+// so `track` only alerts you about releases that come out AFTER you start tracking.
 async function cmdSeed() {
   const release = await github.getLatestRelease();
   state.markAnnounced(release.tag);
-  console.log(`Seeded: ${release.tag} marked as announced (will NOT be posted). Future releases will post.`);
+  console.log(`Seeded: ${release.tag} marked as handled. 'track' will now only flag NEWER releases.`);
 }
 
-// Single-shot poll for cron / CI (GitHub Actions). Exits after one check.
 async function cmdCheck(flags) {
   try {
     await runOnce(flags);
   } catch (err) {
-    console.error(`[${new Date().toISOString()}] check error: ${err.message}`);
+    console.error(`Error: ${err.message}`);
     process.exit(1);
   }
 }
 
-async function cmdWatch(flags) {
+async function cmdTrack(flags) {
   const intervalMin = flags.interval || 30;
   console.log(
-    `Watching ${config.githubRepo} for new releases every ${intervalMin} min.` +
-      (config.discordToken && config.channelId
-        ? ' New releases will be posted to #production-releases.'
-        : ' No Discord configured — will only save drafts to output/.')
+    `Tracking ${config.githubRepo} for new releases every ${intervalMin} min.\n` +
+      `When one drops, a ready-to-paste Discord draft is generated in output/ and printed here.\n` +
+      `(This never posts anywhere — it just prepares the message for you.)\n` +
+      `Tip: run 'node index.js seed' first if you don't want the current release flagged.\n`
   );
 
   const tick = () =>
     runOnce(flags).catch((err) =>
-      console.error(`[${new Date().toISOString()}] watch error: ${err.message}`)
+      console.error(`[${new Date().toLocaleString()}] track error: ${err.message}`)
     );
 
   await tick();
@@ -155,8 +196,13 @@ async function main() {
     case 'latest':
       await cmdGenerate(positional, flags);
       break;
-    case 'post':
-      await cmdGenerate(positional, { ...flags, post: true });
+    case 'list':
+    case 'releases':
+      await cmdList(positional, flags);
+      break;
+    case 'track':
+    case 'watch':
+      await cmdTrack(flags);
       break;
     case 'check':
     case 'once':
@@ -165,8 +211,8 @@ async function main() {
     case 'seed':
       await cmdSeed();
       break;
-    case 'watch':
-      await cmdWatch(flags);
+    case 'post':
+      await cmdGenerate(positional, { ...flags, post: true });
       break;
     case 'help':
     case '--help':
@@ -181,27 +227,31 @@ async function main() {
 }
 
 function printHelp() {
-  console.log(`graphify-release-announcer — Coolify-style #production-releases posts
+  console.log(`graphify-release-announcer — your personal release tracker + Discord message generator
+
+It watches the Graphify repo's releases and hands you a ready-to-paste, Coolify-style
+#production-releases announcement. It does NOT post anything on its own.
 
 Usage:
-  node index.js generate [tag]     Build announcement for latest (or a tag), print + save to output/
-  node index.js post [tag]         Build AND post it to #production-releases (needs Discord env)
-  node index.js check              One-shot: post the latest release if it's new, then exit (for cron/CI)
-  node index.js seed               Mark the current latest release as announced WITHOUT posting (first-time setup)
-  node index.js watch              Poll for new releases; auto-post/draft when one appears
+  node index.js generate [tag]     Generate the Discord announcement for the latest (or a tag)
+  node index.js list [n]           List the latest n releases; flags ones you haven't drafted yet
+  node index.js track              Keep running; alert + generate a draft when a NEW release drops
+  node index.js check              One-shot version of track (generate a draft if latest is new)
+  node index.js seed               Mark the current latest as handled (so 'track' only flags newer ones)
+  node index.js post [tag]         (optional) Also post it to Discord yourself — needs Discord env
 
 Flags:
-  --post            Also post to Discord (generate/latest only)
-  --dry             With --post: build the post text but don't send
-  --no-llm          Skip Claude; use the deterministic parser
+  --copy            Copy the generated announcement to your clipboard (ready to paste)
+  --no-llm          Skip Claude; use the built-in parser (works offline, no API key)
   --no-save         Don't write the draft to output/
-  --interval=N      watch: minutes between polls (default 30)
+  --interval=N      track: minutes between checks (default 30)
+  --file=<path>     Render from a saved release JSON (offline / testing)
 
 Examples:
-  node index.js generate            # draft for the latest release
-  node index.js generate v0.9.14    # draft for a specific tag
-  node index.js post v0.9.14        # draft + post it
-  node index.js watch --interval=15 # poll every 15 min and auto-post`);
+  node index.js generate --copy        # draft the latest release, straight to your clipboard
+  node index.js generate v0.9.14       # draft a specific version
+  node index.js list                   # what releases are out, and which I've handled
+  node index.js track --interval=15    # sit in the background, ping me when a release drops`);
 }
 
 main().catch((err) => {

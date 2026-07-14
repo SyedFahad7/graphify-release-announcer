@@ -1,27 +1,32 @@
 # graphify-release-announcer
 
-Turns a **Graphify GitHub release** into a **ready-to-paste, Coolify-style `#production-releases`
-Discord announcement** — so you can post the moment a prod release drops.
+Your **personal release tracker + Discord message generator** for Graphify.
 
-It pulls the release notes from `Graphify-Labs/graphify`, rewrites the messy changelog into clean,
-grouped, human-friendly highlights (✨ New Features · 🐛 Notable Bug Fixes · 🔒 Security Fixes ·
-⚠️ Breaking Changes · 🛠️ Integrations/Exports), and either **prints a draft for you to copy-paste**
-or **posts it straight to Discord**.
+It watches the Graphify repo's releases and, whenever one drops, hands you a **ready-to-paste,
+Coolify-style `#production-releases` announcement** — a role ping, a one-line summary, then clean
+grouped highlights and a link to the full notes. You review it and paste it into Discord yourself.
 
-> Inspired by how the Coolify team announces releases in their `#production-releases` channel:
-> a role ping, a one-line summary, then grouped highlights and a link to the full notes.
+**It does not post anything on its own.** It's a tool you run for yourself, not a bot.
+
+> Modeled on how teams like Coolify announce releases: `@Production Releases – vX.Y.Z is now live`,
+> grouped highlights (✨ New Features · 🐛 Notable Bug Fixes · 🔒 Security · ⚠️ Breaking · 🛠️ Integrations),
+> and a link to the full changelog.
 
 ---
 
+## Why
+
+You're not tracking the repo full-time, and raw GitHub release notes are dense/technical. This turns
+whatever just shipped into a clean, human-friendly announcement you can drop into Discord in seconds —
+without reading the whole changelog or knowing the internals.
+
 ## How it works
 
-1. **Fetch** the target release from GitHub (latest, or a specific tag).
+1. **Fetch** the release from GitHub (latest, or a tag you pick).
 2. **Rewrite** the notes into grouped highlights:
-   - **With `ANTHROPIC_API_KEY`** → Claude rewrites the notes into tight, community-friendly bullets.
-   - **Without a key** → a deterministic parser categorizes the notes (works offline, no cost).
-3. **Output** a ready-to-paste `.md` draft (in `output/`) and/or **post** it to `#production-releases`.
-
-The LLM is optional. The deterministic fallback already produces a solid, correctly-grouped post.
+   - **With `ANTHROPIC_API_KEY`** → Claude rewrites them into tight, friendly bullets.
+   - **Without a key** → a built-in parser groups them (works offline, no cost, still good).
+3. **Hand it to you** — printed, saved to `output/<tag>.md`, and (with `--copy`) on your clipboard.
 
 ---
 
@@ -30,12 +35,70 @@ The LLM is optional. The deterministic fallback already produces a solid, correc
 ```bash
 cd graphify-release-announcer
 npm install
-cp .env.example .env   # edit values (only needed for --post and/or LLM polish)
 ```
 
-Node 18+ is required (uses the built-in `fetch`).
+Node 18+ (uses the built-in `fetch`). No config needed to start. Optional: `cp .env.example .env`
+and add `ANTHROPIC_API_KEY` for nicer wording.
 
-### `.env` (all optional except when posting)
+---
+
+## Everyday use
+
+```bash
+# See what's out there and what you've already handled
+node index.js list
+
+# Draft the latest release and copy it straight to your clipboard
+node index.js generate --copy
+
+# Draft a specific version
+node index.js generate v0.9.14
+
+# Leave it running — it pings you + generates a draft the moment a new release drops
+node index.js track --interval=15
+```
+
+`generate` prints the message, saves it to `output/<tag>.md`, and with `--copy` puts it on your
+clipboard so you can paste it into Discord immediately.
+
+### Tracking in the background
+
+`track` polls every N minutes. When a release you haven't handled appears, it generates the draft and
+prints a `🔔 NEW RELEASE` notice. Run `node index.js seed` once first if you don't want it to flag the
+release that's *already* out. Use `check` for a one-shot version (no loop).
+
+---
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `generate [tag]` | Generate the announcement for the latest release (or a specific tag). Default command. |
+| `list [n]` | List the latest `n` releases and flag ones you haven't drafted yet (● = new). |
+| `track` | Keep running; alert + generate a draft when a new release drops. Never posts. |
+| `check` | One-shot version of `track`. |
+| `seed` | Mark the current latest as handled, so `track` only flags newer releases. |
+| `post [tag]` | *(optional)* Also post it to Discord yourself — needs the Discord env vars. |
+
+## Flags
+
+- `--copy` — copy the generated announcement to your clipboard.
+- `--no-llm` — skip Claude, use the built-in parser (offline, no key).
+- `--no-save` — don't write the draft to `output/`.
+- `--interval=<min>` — `track` poll interval (default 30).
+- `--file=<path>` — render from a saved GitHub release JSON (offline / testing; see `samples/`).
+
+---
+
+## Optional: let it post for you
+
+If you'd rather it also post (still only when *you* run `post`), set these in `.env`:
+`DISCORD_TOKEN`, `PRODUCTION_RELEASES_CHANNEL_ID`, and `PRODUCTION_RELEASES_ROLE_ID` (the role to
+ping). Then `node index.js post v0.9.14`. Long messages are split into ≤2000-char chunks and
+`allowed_mentions` is locked so only the release role can ping (never `@everyone`). Leave these blank
+to keep it purely a generator.
+
+## Config (`.env`, all optional)
 
 | Var | Purpose |
 |-----|---------|
@@ -43,107 +106,21 @@ Node 18+ is required (uses the built-in `fetch`).
 | `GITHUB_TOKEN` | Lifts the 60 req/hr anon GitHub limit (any read scope). |
 | `ANTHROPIC_API_KEY` | Enables Claude polish. Omit to use the offline parser. |
 | `ANTHROPIC_MODEL` | Default `claude-sonnet-4-6`. |
-| `DISCORD_TOKEN` | Bot token (only for `--post` / `watch`). |
-| `PRODUCTION_RELEASES_CHANNEL_ID` | The `#production-releases` channel id. |
-| `PRODUCTION_RELEASES_ROLE_ID` | Role to actually ping at the top. Blank = plain `@Production Releases` text (no ping). |
+| `PRODUCT_NAME` / `PYPI_PACKAGE` | Shown in the message. Default `Graphify` / `graphifyy`. |
+| `RELEASE_ROLE_NAME` | The `@…` text at the top of the message (default `Production Releases`). |
+| `DISCORD_*` | Only for the optional `post` command. |
 | `MAX_ITEMS_PER_SECTION` | Collapse long sections to `…and N more` (default 10). |
 | `KEEP_THANKS` | Keep `(thanks @contributor)` credits (default `true`). |
-
----
-
-## Usage
-
-```bash
-# Draft for the latest release → prints + saves output/<tag>.md
-node index.js generate
-
-# Draft for a specific tag
-node index.js generate v0.9.14
-
-# Draft AND post to #production-releases (needs Discord env)
-node index.js post v0.9.14
-
-# Preview what would be posted, without sending
-node index.js generate v0.9.14 --post --dry
-
-# Skip Claude, use the offline parser
-node index.js generate --no-llm
-
-# Render from a saved release JSON (offline / testing)
-node index.js generate --file=samples/v0.9.14.json --no-llm
-
-# Watch for new releases and auto-post/draft when one appears
-node index.js watch --interval=15
-
-# One-shot for cron/CI: post the latest release only if it's new, then exit
-node index.js check
-
-# First-time setup: mark the current latest release as done so it isn't re-announced
-node index.js seed
-```
-
-### Flags
-
-- `--post` — also post to Discord (`generate`/`latest`).
-- `--dry` — with `--post`, build the message but don't send.
-- `--no-llm` — force the deterministic parser.
-- `--no-save` — don't write the draft to `output/`.
-- `--file=<path>` — render from a saved GitHub release JSON instead of fetching.
-- `--interval=<min>` — `watch` poll interval (default 30).
-
----
-
-## Typical DevRel flow
-
-1. Safi cuts a release on GitHub.
-2. Run `node index.js generate` (or leave `watch` running).
-3. Skim the draft in `output/<tag>.md`, tweak the intro if you want a warmer opener.
-4. Paste into `#production-releases` — or let `--post` / `watch` do it for you.
-
-The top line renders as a real role ping (`<@&ROLE_ID>`) **only when posting** and only for the
-configured role; the saved `.md` uses a plain `@Production Releases` so nothing pings while you edit.
-
----
-
-## Auto-post from GitHub Actions (recommended)
-
-`.github/workflows/announce.yml` runs `node index.js check` on a schedule (every 30 min) and posts
-any new release to `#production-releases` — no server to keep running. State (which tags were already
-announced) is persisted between runs via the Actions cache, the same trick the social-bot uses.
-
-**Setup (once you push this folder as its own repo):**
-
-1. Add repo **secrets** (Settings → Secrets and variables → Actions → *Secrets*):
-   - `DISCORD_TOKEN`
-   - `PRODUCTION_RELEASES_CHANNEL_ID`
-   - `PRODUCTION_RELEASES_ROLE_ID` (the role to ping)
-   - `ANTHROPIC_API_KEY` *(optional — omit to use the offline parser)*
-2. Optionally add **variables** (*Variables* tab) to override defaults: `GITHUB_REPO`, `PRODUCT_NAME`,
-   `PYPI_PACKAGE`, `RELEASE_ROLE_NAME`, `ANTHROPIC_MODEL`. Sensible defaults are baked in.
-3. **Seed first** so it doesn't re-announce the release that's already out: run the workflow manually
-   (Actions → *Release Announcer* → *Run workflow* → **mode: `seed`**). After that, every *new* release
-   auto-posts within ~30 min.
-4. The manual run also offers **mode: `dry`** (build but don't post) to preview.
-
-GitHub reads use the workflow's built-in token, so there's no extra GitHub PAT to create.
-
-> Runs only cost an LLM call when there's actually a new release; empty checks are a single GitHub API request.
-
-## Discord notes
-
-- Posts via the Discord REST API (`Bot` token) — no gateway/`discord.js` dependency.
-- Long announcements are split into ≤2000-char messages on paragraph boundaries (code blocks stay intact).
-- `allowed_mentions` is locked down: only the configured release role can be pinged (never `@everyone`).
 
 ## Files
 
 | File | Role |
 |------|------|
-| `index.js` | CLI entry (generate / post / watch). |
+| `index.js` | CLI (generate / list / track / check / seed / post). |
 | `github.js` | Fetch/normalize releases (or load from a file). |
-| `parse.js` | Deterministic notes → grouped sections (offline fallback). |
+| `parse.js` | Built-in notes → grouped sections (offline). |
 | `llm.js` | Claude rewrite into the same grouped shape. |
-| `format.js` | Renders the announcement + Discord chunking. |
-| `discord.js` | Posts to `#production-releases`. |
-| `state.js` | Tracks the last announced tag (so `watch` doesn't repeat). |
+| `format.js` | Renders the announcement. |
+| `discord.js` | Optional `post` command. |
+| `state.js` | Remembers which releases you've handled (so `track`/`list` are accurate). |
 | `samples/` | Example release payloads for offline testing. |
