@@ -1,5 +1,11 @@
 node_modules/
 .env
+.env.local
 output/
 state.json
 *.log
+
+# Next.js / Vercel
+.next/
+out/
+.vercel

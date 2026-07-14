@@ -1,10 +1,13 @@
 # graphify-release-announcer
 
-Your **personal release tracker + Discord message generator** for Graphify.
+Your **personal release tracker + Discord message generator** for Graphify. Two ways to use it:
 
-It watches the Graphify repo's releases and, whenever one drops, hands you a **ready-to-paste,
-Coolify-style `#production-releases` announcement** — a role ping, a one-line summary, then clean
-grouped highlights and a link to the full notes. You review it and paste it into Discord yourself.
+- **Web app** (one click) — open the site, hit **Check latest release**, get a ready-to-paste
+  announcement for each channel (Production / Feature / Security / Beta), copy, done. Deploy free on Vercel.
+- **CLI** — the same thing in your terminal (`generate`, `list`, `track`, `--copy`).
+
+Whenever a release drops it hands you a **ready-to-paste, Coolify-style announcement** — a role ping,
+a one-line summary, then clean grouped highlights and a link to the full notes. You review and paste.
 
 **It does not post anything on its own.** It's a tool you run for yourself, not a bot.
 
@@ -30,15 +33,43 @@ without reading the whole changelog or knowing the internals.
 
 ---
 
-## Setup
+## Web app
 
 ```bash
-cd graphify-release-announcer
+npm install
+npm run dev            # http://localhost:3000
+```
+
+Open it and click **Check latest release**. You get a card per channel with a **Copy** button:
+
+- **#production-releases** — the full post.
+- **#feature-releases** — just the new features + integrations (lighter).
+- **#security** — only shown/filled when the release has security fixes.
+- **#beta** — for prereleases.
+
+Toggle **Skip AI** to use the built-in parser instead of Claude (free, no key). The recent-releases
+sidebar lets you generate a post for any older version too.
+
+### Deploy to Vercel (one-click site)
+
+1. Push this repo to GitHub (already done: `SyedFahad7/graphify-release-announcer`).
+2. On [vercel.com](https://vercel.com) → **Add New → Project** → import the repo. Framework: **Next.js**
+   (auto-detected). Click **Deploy**.
+3. *(Optional)* In **Project → Settings → Environment Variables**, add `ANTHROPIC_API_KEY` for
+   AI-polished wording. It's used only server-side (never exposed to the browser). Without it, the
+   built-in parser is used — still works great.
+4. Open your `*.vercel.app` URL and click **Check latest release**.
+
+That's the "one click checks for the latest release" you wanted — no server to run.
+
+## CLI setup
+
+```bash
 npm install
 ```
 
-Node 18+ (uses the built-in `fetch`). No config needed to start. Optional: `cp .env.example .env`
-and add `ANTHROPIC_API_KEY` for nicer wording.
+Node 18+ (uses the built-in `fetch`). No config needed. Optional: `cp .env.example .env` and add
+`ANTHROPIC_API_KEY` for nicer wording.
 
 ---
 
@@ -116,11 +147,14 @@ to keep it purely a generator.
 
 | File | Role |
 |------|------|
+| `app/` | Next.js web app: `page.js` (UI), `api/announce/route.js` (serverless generator). |
 | `index.js` | CLI (generate / list / track / check / seed / post). |
 | `github.js` | Fetch/normalize releases (or load from a file). |
+| `content.js` | Release notes → grouped `{ intro, sections }` (Claude or parser). Shared by CLI + web. |
 | `parse.js` | Built-in notes → grouped sections (offline). |
 | `llm.js` | Claude rewrite into the same grouped shape. |
-| `format.js` | Renders the announcement. |
-| `discord.js` | Optional `post` command. |
+| `channels.js` | Derives the Production / Feature / Security / Beta posts from one release. |
+| `format.js` | Renders an announcement. |
+| `discord.js` | Optional `post` command (CLI only). |
 | `state.js` | Remembers which releases you've handled (so `track`/`list` are accurate). |
 | `samples/` | Example release payloads for offline testing. |

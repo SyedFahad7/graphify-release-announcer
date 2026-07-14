@@ -4,8 +4,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const config = require('./config');
 const github = require('./github');
-const { parseReleaseBody } = require('./parse');
-const { polishWithLLM } = require('./llm');
+const { buildContent } = require('./content');
 const { buildAnnouncement } = require('./format');
 const { postAnnouncement } = require('./discord');
 const state = require('./state');
@@ -49,26 +48,6 @@ function copyToClipboard(text) {
   }
 }
 
-// Build { intro, sections } — LLM first, deterministic parser as fallback.
-async function buildContent(release, noLlm) {
-  if (!noLlm && config.anthropicApiKey) {
-    try {
-      const content = await polishWithLLM(release);
-      const total = Object.values(content.sections).reduce((n, a) => n + a.length, 0);
-      if (total > 0 || content.intro) {
-        console.log('  ↳ notes polished with Claude');
-        return content;
-      }
-      console.log('  ↳ LLM returned nothing usable, using parser');
-    } catch (err) {
-      console.log(`  ↳ LLM polish failed (${err.message}); using parser`);
-    }
-  } else if (!noLlm) {
-    console.log('  ↳ no ANTHROPIC_API_KEY, using deterministic parser');
-  }
-  return parseReleaseBody(release.body);
-}
-
 function saveOutput(release, text) {
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const file = path.join(OUTPUT_DIR, `${release.tag}.md`);
@@ -82,8 +61,11 @@ async function produce(release, flags) {
   if (release.prerelease) console.log('  ⚠️  this is a PRERELEASE');
   if (release.draft) console.log('  ⚠️  this is a DRAFT');
 
-  const content = await buildContent(release, flags.noLlm);
-  const pasteText = buildAnnouncement(release, content, false);
+  const { content } = await buildContent(release, {
+    noLlm: flags.noLlm,
+    log: (m) => console.log(`  ↳ ${m}`),
+  });
+  const pasteText = buildAnnouncement(release, content, { forPosting: false });
 
   if (!flags.noSave) {
     const file = saveOutput(release, pasteText);
@@ -100,7 +82,7 @@ async function produce(release, flags) {
 
   // Optional manual post — only if you explicitly run `post` / pass --post.
   if (flags.post) {
-    const postText = buildAnnouncement(release, content, true);
+    const postText = buildAnnouncement(release, content, { forPosting: true });
     const n = await postAnnouncement(postText);
     console.log(`  ✅ posted to Discord (${n} message${n > 1 ? 's' : ''}).`);
   }

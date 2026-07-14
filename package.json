@@ -3,15 +3,14 @@
   "version": "1.0.0",
   "description": "Turns a Graphify GitHub release into a ready-to-paste, Coolify-style #production-releases Discord announcement (LLM-polished, deterministic fallback).",
   "main": "index.js",
-  "type": "commonjs",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "generate": "node index.js generate",
-    "latest": "node index.js latest",
-    "watch": "node index.js watch",
-    "start": "node index.js watch"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "cli": "node index.js"
   },
   "keywords": [
     "graphify",
@@ -23,6 +22,9 @@
   "author": "Syed Fahad (DevRel)",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   }
 }
