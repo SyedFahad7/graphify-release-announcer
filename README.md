@@ -140,7 +140,9 @@ to keep it purely a generator.
 | `PRODUCT_NAME` / `PYPI_PACKAGE` | Shown in the message. Default `Graphify` / `graphifyy`. |
 | `RELEASE_ROLE_NAME` | The `@…` text at the top of the message (default `Production Releases`). |
 | `DISCORD_*` | Only for the optional `post` command. |
-| `MAX_ITEMS_PER_SECTION` | Collapse long sections to `…and N more` (default 10). |
+| `MAX_ITEMS_PER_SECTION` | Cap bullets per section (default `0` = show all; auto-fit trims to Discord's limit). |
+| `POST_THEME` | `peak` (H1 + emoji headers) or `shadow` (inline title + hollow nested bullets). |
+| `DISCORD_CHAR_LIMIT` | Auto-trim to fit one Discord message (default `1990`). |
 | `CLEAN_STYLE` | Clean Coolify-style bullets — strip `(#123)` refs + `thanks @x` (default `true`; set `false` for dev-detailed). |
 
 ## Files

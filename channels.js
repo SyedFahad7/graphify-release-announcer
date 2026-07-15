@@ -34,28 +34,28 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, content, {
       forPosting,
       roleName: 'Production Releases',
-      headline: `**${P()} ${tag} is now live** ${config.releaseEmoji}`,
+      title: `${P()} ${tag} is now live`,
     }),
   });
 
   // 2) Feature — only the exciting stuff (highlights + new features + integrations).
-  const featureKeys = ['highlights', 'new_features', 'services'];
+  const featureKeys = ['highlights', 'new_features', 'services', 'notes'];
   const featureContent = pick(content, featureKeys);
   results.push({
     key: 'feature',
     label: 'Feature Releases',
     channel: '#feature-releases',
-    applicable: count(content, featureKeys) > 0,
+    applicable: count(content, ['highlights', 'new_features', 'services']) > 0,
     text: buildAnnouncement(release, featureContent, {
       forPosting,
       roleName: 'Feature Releases',
-      headline: `**✨ What's new in ${P()} ${tag}**`,
-      highlightsLabel: '',
+      title: `What's new in ${P()} ${tag}`,
+      showHighlights: false,
     }),
   });
 
   // 3) Security — only when the release has security fixes.
-  const securityContent = pick(content, ['security']);
+  const securityContent = pick(content, ['security', 'notes']);
   results.push({
     key: 'security',
     label: 'Security',
@@ -64,8 +64,9 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, securityContent, {
       forPosting,
       roleName: 'Security',
-      headline: `**🔒 Security update in ${P()} ${tag}** — upgrade recommended`,
-      highlightsLabel: '',
+      title: `Security update in ${P()} ${tag} (upgrade recommended)`,
+      showHighlights: false,
+      includeInstall: true,
     }),
   });
 
@@ -78,7 +79,7 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, content, {
       forPosting,
       roleName: 'Beta Testers',
-      headline: `**🧪 ${P()} ${tag} (beta) is available for testing**`,
+      title: `${P()} ${tag} (beta) is ready for testing`,
     }),
   });
 

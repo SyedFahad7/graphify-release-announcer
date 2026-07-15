@@ -1,6 +1,19 @@
 const config = require('./config');
 
+// Humanize: swap the AI-slop em-dash "—" for a comma so posts don't read like AI
+// wrote them. We only touch em-dashes (U+2014), never hyphens in compound words
+// (per-file, path/username) or en-dashes used for ranges.
+function deSlop(s) {
+  return s
+    .replace(/\s*—\s*/g, ', ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .replace(/,\s*,/g, ',')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // Canonical output buckets, in render order. Keep in sync with format.js.
+// `notes` is rendered separately (as a quote block), always last.
 const SECTION_ORDER = [
   'highlights',
   'new_features',
@@ -9,6 +22,7 @@ const SECTION_ORDER = [
   'breaking',
   'services',
   'other',
+  'notes',
 ];
 
 function emptySections() {
@@ -20,12 +34,14 @@ function emptySections() {
     breaking: [],
     services: [],
     other: [],
+    notes: [],
   };
 }
 
 // Map a `## Heading` to a canonical bucket by keyword.
 function headingToBucket(heading) {
-  const h = heading.toLowerCase();
+  const h = heading.toLowerCase().trim();
+  if (/^note/.test(h)) return 'notes'; // "Note", "Notes", "Note for Cloud Users"
   if (/highlight/.test(h)) return 'highlights';
   if (/(security|cve|vulnerab)/.test(h)) return 'security';
   if (/(break|deprecat)/.test(h)) return 'breaking';
@@ -58,10 +74,12 @@ function stripLeadingToken(text) {
 function cleanBullet(raw) {
   let t = raw.trim();
   t = t.replace(/^[-*]\s+/, ''); // list marker
-  // Leading **bold title** -> "title — rest" (or "title. rest" if title already ends a sentence).
-  t = t.replace(/^\*\*(.+?)\*\*\s*[:.\-–—]?\s*/, (_, title) => {
+  // Leading **bold** — unwrap it so the sentence flows naturally (no injected
+  // "Title —" em-dash slop). Only when the author used an explicit separator
+  // ("**Title:** rest" / "**Title** - rest") do we keep a plain colon.
+  t = t.replace(/^\*\*(.+?)\*\*(\s*[:\-–—]\s+)?/, (_, title, sep) => {
     const clean = title.trim();
-    return /[.!?)]$/.test(clean) ? `${clean} ` : `${clean} — `;
+    return sep ? `${clean}: ` : `${clean} `;
   });
 
   if (config.cleanStyle) {
@@ -78,7 +96,7 @@ function cleanBullet(raw) {
 
   t = t.replace(/\s+/g, ' ').trim();
   t = t.replace(/\s+[—–-]\s*$/, '').trim(); // dangling trailing dash from title join
-  return t;
+  return deSlop(t);
 }
 
 // Collect any (#123) issue/PR numbers to help dedupe across sections.
@@ -132,11 +150,18 @@ function parseReleaseBody(body) {
     }
 
     // Prose before the first heading becomes the intro paragraph.
-    if (!sawHeading && line.trim()) introLines.push(line.trim());
+    if (!sawHeading && line.trim()) {
+      introLines.push(line.trim());
+      continue;
+    }
+    // Prose under a "Note" heading (Coolify writes notes as paragraphs, not bullets).
+    if (currentBucketFromHeading === 'notes' && line.trim()) {
+      sections.notes.push(line.trim().replace(/\s+/g, ' '));
+    }
   }
 
-  const intro = introLines.join(' ').replace(/\s+/g, ' ').trim();
+  const intro = deSlop(introLines.join(' '));
   return { intro, sections };
 }
 
-module.exports = { parseReleaseBody, SECTION_ORDER, emptySections };
+module.exports = { parseReleaseBody, SECTION_ORDER, emptySections, deSlop };

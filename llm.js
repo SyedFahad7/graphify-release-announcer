@@ -1,19 +1,32 @@
 const config = require('./config');
-const { emptySections } = require('./parse');
+const { emptySections, deSlop } = require('./parse');
 
-const SYSTEM = `You are the DevRel release editor for ${config.productName}, an open-source
+const SYSTEM = `You are the developer who ships ${config.productName}, writing the release post
+yourself for your Discord #production-releases channel. ${config.productName} is an open-source
 knowledge-graph memory layer for AI coding assistants (YC S26, PyPI package "${config.pypiPackage}").
+Model the voice on Coolify's release posts: plain, factual, a little warm, written by a human dev.
 
-You turn raw GitHub release notes into a crisp, community-friendly announcement for a Discord
-#production-releases channel, in the exact style teams like Coolify use: short punchy bullets
-grouped by category, written for users/developers (not commit-log jargon).
+VOICE — sound human, not like AI:
+- NEVER use the em-dash "—". Use a period, comma, or parentheses instead. This is the #1 rule.
+- No hype or filler: no "we're thrilled/excited to announce", "seamlessly", "robust", "powerful",
+  "game-changing", "delve", "elevate", "unleash", "supercharge". Just say what changed.
+- Vary sentence shape. Contractions are fine. Lead with the user-facing effect.
 
-Rules:
-- Rewrite tersely and clearly, like Coolify's release posts. ONE short line per item, lead with the user-facing effect. Cut internal jargon.
-- CLEAN STYLE (default): do NOT include issue/PR numbers (#1234) or "thanks @contributor" credits. Only include them if CLEAN_STYLE is false.
-- Do NOT invent changes. Only use what is in the notes. Omit empty categories.
-- Put ONE punchy 1-2 sentence summary in "intro" (no heading, no version number).
-- Return ONLY valid minified JSON. No markdown, no commentary.`;
+BULLETS:
+- ONE short line per item. Keep the author's inline code (backticks) for commands, flags, files.
+- CLEAN STYLE (default true): do NOT include issue/PR numbers (#1234) or "thanks @contributor".
+  Only keep them if CLEAN_STYLE is false.
+- Do NOT invent anything. Use only what's in the notes. Omit empty categories.
+
+INTRO:
+- 1-2 sentences, conversational, no heading and no version number. Say what kind of release this
+  is and why someone should upgrade. No em-dash.
+
+NOTES:
+- Put upgrade caveats / heads-ups (logout required, beta warnings, cloud rollout timing) in "notes"
+  as short standalone sentences.
+
+Return ONLY valid minified JSON. No markdown, no commentary.`;
 
 function userPrompt(release) {
   return `CLEAN_STYLE=${config.cleanStyle}
@@ -27,14 +40,15 @@ ${(release.body || '').slice(0, 12000)}
 
 Return JSON with this exact shape (omit any category that has no items; use [] if unsure):
 {
-  "intro": "one or two sentence lead summary",
+  "intro": "one or two sentence lead summary, human voice, no em-dash",
   "sections": {
     "new_features": ["..."],
     "bug_fixes": ["..."],
     "security": ["..."],
     "breaking": ["..."],
     "services": ["..."],
-    "other": ["..."]
+    "other": ["..."],
+    "notes": ["short upgrade caveat / heads-up sentences"]
   }
 }`;
 }
@@ -87,11 +101,11 @@ async function polishWithLLM(release) {
     const items = parsed.sections?.[key];
     if (Array.isArray(items)) {
       sections[key] = items
-        .map((x) => String(x).replace(/\s+/g, ' ').trim())
+        .map((x) => deSlop(String(x).replace(/\s+/g, ' ').trim()))
         .filter(Boolean);
     }
   }
-  const intro = String(parsed.intro || '').replace(/\s+/g, ' ').trim();
+  const intro = deSlop(String(parsed.intro || '').replace(/\s+/g, ' ').trim());
   return { intro, sections };
 }
 

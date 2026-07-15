@@ -5,7 +5,7 @@ const { spawnSync } = require('child_process');
 const config = require('./config');
 const github = require('./github');
 const { buildContent } = require('./content');
-const { buildAnnouncement } = require('./format');
+const { buildAnnouncement, buildAnnouncementDetailed } = require('./format');
 const { postAnnouncement } = require('./discord');
 const state = require('./state');
 
@@ -65,7 +65,13 @@ async function produce(release, flags) {
     noLlm: flags.noLlm,
     log: (m) => console.log(`  ↳ ${m}`),
   });
-  const pasteText = buildAnnouncement(release, content, { forPosting: false });
+  const built = buildAnnouncementDetailed(release, content, { forPosting: false });
+  const pasteText = built.text;
+  if (built.trimmed > 0) {
+    console.log(
+      `  ↳ trimmed ${built.trimmed} lower-priority item(s) to fit Discord's ${config.fitLimit}-char limit (full list is in the release-notes link)`
+    );
+  }
 
   if (!flags.noSave) {
     const file = saveOutput(release, pasteText);
