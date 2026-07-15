@@ -27,7 +27,9 @@ const config = {
   roleName: process.env.RELEASE_ROLE_NAME || 'Production Releases',
 
   maxItemsPerSection: int(process.env.MAX_ITEMS_PER_SECTION, 10),
-  keepThanks: bool(process.env.KEEP_THANKS, true),
+  // Clean, Coolify-style bullets: strip (#123) issue/PR refs and "thanks @x" credits,
+  // keep lines short. Set CLEAN_STYLE=false for dev-detailed output (refs + credits kept).
+  cleanStyle: bool(process.env.CLEAN_STYLE, true),
 };
 
 module.exports = config;

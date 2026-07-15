@@ -9,14 +9,14 @@ You turn raw GitHub release notes into a crisp, community-friendly announcement 
 grouped by category, written for users/developers (not commit-log jargon).
 
 Rules:
-- Rewrite tersely and clearly. One line per item. Lead with the user-facing effect.
-- Keep issue/PR references like (#1810) when present. Keep "thanks @contributor" credits ONLY if KEEP_THANKS is on.
+- Rewrite tersely and clearly, like Coolify's release posts. ONE short line per item, lead with the user-facing effect. Cut internal jargon.
+- CLEAN STYLE (default): do NOT include issue/PR numbers (#1234) or "thanks @contributor" credits. Only include them if CLEAN_STYLE is false.
 - Do NOT invent changes. Only use what is in the notes. Omit empty categories.
-- Put the single most important 1-2 sentence summary in "intro" (no heading, no version number).
+- Put ONE punchy 1-2 sentence summary in "intro" (no heading, no version number).
 - Return ONLY valid minified JSON. No markdown, no commentary.`;
 
 function userPrompt(release) {
-  return `KEEP_THANKS=${config.keepThanks}
+  return `CLEAN_STYLE=${config.cleanStyle}
 
 Release: ${release.name} (${release.tag})
 Repo: ${config.githubRepo}

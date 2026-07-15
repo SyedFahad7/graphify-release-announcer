@@ -63,13 +63,21 @@ function cleanBullet(raw) {
     const clean = title.trim();
     return /[.!?)]$/.test(clean) ? `${clean} ` : `${clean} — `;
   });
-  t = t.replace(/\s+/g, ' ').trim();
-  if (!config.keepThanks) {
-    // drop "(#123, thanks @x)" / ", thanks @x" credit tails
-    t = t.replace(/,?\s*thanks\s+@[\w-]+/gi, '');
-    t = t.replace(/\(\s*\)/g, '').replace(/\s+\)/g, ')');
+
+  if (config.cleanStyle) {
+    // Drop parentheticals that only reference issues/PRs or thank contributors,
+    // e.g. "(#1873 / #1887, thanks @Alwyn93)" or "(#1899)" — but keep real ones
+    // like "(successor of Nixpacks)".
+    t = t.replace(/\s*\([^()]*(?:#\d+|thanks|thx|\bPR\b)[^()]*\)/gi, '');
+    // Any stray "thanks @x" or "#123" left outside parens.
+    t = t.replace(/[;,]?\s*thanks?\s+@[\w-]+(?:['’]s)?/gi, '');
+    t = t.replace(/\s*#\d+/g, '');
+    t = t.replace(/\s+([.,;:])/g, '$1'); // space before punctuation
+    t = t.replace(/[;,]\s*$/g, ''); // dangling separators
   }
-  t = t.replace(/\s+—\s+$/, '').trim();
+
+  t = t.replace(/\s+/g, ' ').trim();
+  t = t.replace(/\s+[—–-]\s*$/, '').trim(); // dangling trailing dash from title join
   return t;
 }
 

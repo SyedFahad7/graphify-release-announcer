@@ -141,7 +141,7 @@ to keep it purely a generator.
 | `RELEASE_ROLE_NAME` | The `@…` text at the top of the message (default `Production Releases`). |
 | `DISCORD_*` | Only for the optional `post` command. |
 | `MAX_ITEMS_PER_SECTION` | Collapse long sections to `…and N more` (default 10). |
-| `KEEP_THANKS` | Keep `(thanks @contributor)` credits (default `true`). |
+| `CLEAN_STYLE` | Clean Coolify-style bullets — strip `(#123)` refs + `thanks @x` (default `true`; set `false` for dev-detailed). |
 
 ## Files
 
