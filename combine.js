@@ -1,6 +1,6 @@
 const config = require('./config');
-const { emptySections, SECTION_ORDER } = require('./parse');
-const { buildContent } = require('./content');
+const { emptySections, SECTION_ORDER, parseReleaseBody } = require('./parse');
+const { polishCombinedWithLLM } = require('./llm');
 const { buildChannels } = require('./channels');
 
 const MAX_COMBINE = 4;
@@ -71,9 +71,13 @@ function buildCombinedIntro(tagsOldestFirst, latestTag) {
   );
 }
 
+function sectionCount(content) {
+  return Object.values(content.sections || {}).reduce((n, a) => n + (a?.length || 0), 0);
+}
+
 /**
  * Build a combined announcement from 2–4 release tags.
- * Returns { release, releases, source, posts, tags }.
+ * Prefers one thorough Claude pass over all notes so the post feels multi-release sized.
  */
 async function buildCombinedAnnouncement(tags, opts = {}) {
   const { noLlm = false, forPosting = false, log = () => {} } = opts;
@@ -95,32 +99,57 @@ async function buildCombinedAnnouncement(tags, opts = {}) {
   const latest = fetched[fetched.length - 1];
   const oldest = fetched[0];
 
-  const contents = [];
+  let content = null;
   let source = 'parser';
-  for (const release of fetched) {
-    const built = await buildContent(release, { noLlm, log });
-    contents.push(built.content);
-    if (built.source === 'llm') source = 'llm';
+
+  // One Claude pass over ALL notes (thorough). Do not polish each release separately
+  // then merge, that was making catch-ups feel like a single skinny release.
+  if (!noLlm && config.anthropicApiKey) {
+    try {
+      log('polishing catch-up with Claude (full coverage across all tags)');
+      content = await polishCombinedWithLLM(fetched);
+      if (sectionCount(content) > 0 || content.intro) {
+        source = 'llm';
+      } else {
+        log('LLM returned nothing usable, merging parsers');
+        content = null;
+      }
+    } catch (err) {
+      log(`LLM catch-up failed (${err.message}); merging parsers`);
+      content = null;
+    }
+  } else if (!noLlm) {
+    log('no ANTHROPIC_API_KEY, merging built-in parsers');
+  } else {
+    log('using built-in parsers (--no-llm)');
   }
 
-  const merged = mergeContents(contents);
-  merged.intro = buildCombinedIntro(tagsOldestFirst, latest.tag);
+  if (!content) {
+    const parsed = fetched.map((r) => parseReleaseBody(r.body));
+    content = mergeContents(parsed);
+    content.intro = buildCombinedIntro(tagsOldestFirst, latest.tag);
+    source = 'parser';
+  } else if (!content.intro) {
+    content.intro = buildCombinedIntro(tagsOldestFirst, latest.tag);
+  }
 
-  // Synthetic release: install/footer point at the newest tag.
   const combinedRelease = {
     ...latest,
     name: `${config.productName} ${oldest.tag} → ${latest.tag}`,
-    // Keep body empty; we already merged structured content.
     body: '',
   };
 
   const spanLabel = `${oldest.tag} → ${latest.tag}`;
-  const posts = buildChannels(combinedRelease, merged, {
+  const releaseLinks = fetched.map((r) => ({ tag: r.tag, url: r.url }));
+
+  // Keep the full write-up. Discord's 2000 limit is handled via chunks in the UI.
+  const posts = buildChannels(combinedRelease, content, {
     forPosting,
+    fitLimit: 0,
     combined: {
       tags: tagsOldestFirst,
       spanLabel,
-      coverNote: `covers ${tagsOldestFirst.join(' · ')}`,
+      releaseLinks,
     },
   });
 

@@ -98,6 +98,15 @@ function notesBlock(notes) {
 }
 
 function footerBlock(release, style, opts = {}) {
+  const links = Array.isArray(opts.releaseLinks) ? opts.releaseLinks.filter((l) => l?.tag && l?.url) : [];
+
+  // Multi-release catch-up: one link per covered tag.
+  if (links.length > 1) {
+    const lines = ['📝 Full release notes:', ...links.map((l) => `${l.tag}: ${l.url}`)];
+    if (style === 'quote') return lines.map((l) => `> ${l}`).join('\n');
+    return `**${lines[0]}**\n${lines.slice(1).join('\n')}`;
+  }
+
   const cover = opts.coverNote ? ` (${opts.coverNote})` : '';
   const link = `Full release notes${cover}: ${release.url}`;
   return style === 'quote' ? `> 📝 ${link}` : `**📝 ${link}**`;
@@ -152,7 +161,12 @@ function renderAnnouncement(release, content, opts) {
 
   if (opts.includeInstall !== false) parts.push(installBlock(release));
 
-  parts.push(footerBlock(release, t.footerStyle, { coverNote: opts.coverNote }));
+  parts.push(
+    footerBlock(release, t.footerStyle, {
+      coverNote: opts.coverNote,
+      releaseLinks: opts.releaseLinks,
+    })
+  );
 
   return parts.join('\n\n');
 }

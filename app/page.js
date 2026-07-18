@@ -303,18 +303,40 @@ export default function Page() {
                   <div className="bar">
                     <span className="label">
                       Paste into <strong>{active.channel}</strong>
+                      {active.length ? (
+                        <span className="sub"> · {active.length} chars</span>
+                      ) : null}
                     </span>
                     <button
                       className={`copy ${copied === active.key ? 'done' : ''}`}
                       onClick={() => copy(active.key, active.text)}
                     >
-                      {copied === active.key ? '✓ Copied' : '📋 Copy'}
+                      {copied === active.key ? '✓ Copied' : '📋 Copy full'}
                     </button>
                   </div>
                   {!active.applicable && (
                     <div className="na-note" style={{ marginBottom: 12 }}>
                       This release doesn’t have anything for {active.channel}. Shown anyway in case
                       you want it.
+                    </div>
+                  )}
+                  {active.chunks && active.chunks.length > 1 && (
+                    <div className="na-note" style={{ marginBottom: 12 }}>
+                      Over Discord’s 2000-char paste limit. Copy full for editing, or paste as{' '}
+                      {active.chunks.length} messages:
+                      <div className="chunk-actions">
+                        {active.chunks.map((chunk, i) => (
+                          <button
+                            key={i}
+                            className={`copy ${copied === `${active.key}-${i}` ? 'done' : ''}`}
+                            onClick={() => copy(`${active.key}-${i}`, chunk)}
+                          >
+                            {copied === `${active.key}-${i}`
+                              ? `✓ Part ${i + 1}`
+                              : `📋 Part ${i + 1}/${active.chunks.length}`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <pre className="msg">{active.text}</pre>
