@@ -28,6 +28,7 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState('production');
   const [noLlm, setNoLlm] = useState(false);
   const [copied, setCopied] = useState('');
+  const [chunkIdx, setChunkIdx] = useState(0); // next Discord part to copy
   const [mode, setMode] = useState('single'); // 'single' | 'combine'
   const [selected, setSelected] = useState([]); // tags for combine
 
@@ -54,6 +55,7 @@ export default function Page() {
         if (json.error) throw new Error(json.error);
         setData(json);
         setActiveTag(json.release.tag);
+        setChunkIdx(0);
         const firstApplicable = json.posts.find((p) => p.applicable) || json.posts[0];
         setActiveTab(firstApplicable.key);
       } catch (e) {
@@ -83,6 +85,7 @@ export default function Page() {
       if (json.error) throw new Error(json.error);
       setData(json);
       setActiveTag(json.release.tag);
+      setChunkIdx(0);
       const firstApplicable = json.posts.find((p) => p.applicable) || json.posts[0];
       setActiveTab(firstApplicable.key);
     } catch (e) {
@@ -300,46 +303,83 @@ export default function Page() {
 
               {active && (
                 <div className="card post">
-                  <div className="bar">
-                    <span className="label">
-                      Paste into <strong>{active.channel}</strong>
-                      {active.length ? (
-                        <span className="sub"> · {active.length} chars</span>
-                      ) : null}
-                    </span>
-                    <button
-                      className={`copy ${copied === active.key ? 'done' : ''}`}
-                      onClick={() => copy(active.key, active.text)}
-                    >
-                      {copied === active.key ? '✓ Copied' : '📋 Copy full'}
-                    </button>
-                  </div>
-                  {!active.applicable && (
-                    <div className="na-note" style={{ marginBottom: 12 }}>
-                      This release doesn’t have anything for {active.channel}. Shown anyway in case
-                      you want it.
-                    </div>
-                  )}
-                  {active.chunks && active.chunks.length > 1 && (
-                    <div className="na-note" style={{ marginBottom: 12 }}>
-                      Over Discord’s 2000-char paste limit. Copy full for editing, or paste as{' '}
-                      {active.chunks.length} messages:
-                      <div className="chunk-actions">
-                        {active.chunks.map((chunk, i) => (
-                          <button
-                            key={i}
-                            className={`copy ${copied === `${active.key}-${i}` ? 'done' : ''}`}
-                            onClick={() => copy(`${active.key}-${i}`, chunk)}
-                          >
-                            {copied === `${active.key}-${i}`
-                              ? `✓ Part ${i + 1}`
-                              : `📋 Part ${i + 1}/${active.chunks.length}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <pre className="msg">{active.text}</pre>
+                  {(() => {
+                    const parts = active.chunks?.length > 1 ? active.chunks : null;
+                    const needsSplit = Boolean(parts);
+                    const safeIdx = parts ? Math.min(chunkIdx, parts.length - 1) : 0;
+                    const copyDiscordPart = (i) => {
+                      copy(`${active.key}-${i}`, parts[i]);
+                      setChunkIdx(Math.min(i + 1, parts.length - 1));
+                    };
+                    return (
+                      <>
+                        <div className="bar">
+                          <span className="label">
+                            Paste into <strong>{active.channel}</strong>
+                            {active.length ? (
+                              <span className="sub"> · {active.length} chars</span>
+                            ) : null}
+                          </span>
+                          {needsSplit ? (
+                            <button
+                              className={`copy primary-copy ${copied === `${active.key}-${safeIdx}` ? 'done' : ''}`}
+                              onClick={() => copyDiscordPart(safeIdx)}
+                            >
+                              {copied === `${active.key}-${safeIdx}`
+                                ? `✓ Part ${safeIdx + 1} copied — paste in Discord`
+                                : `📋 Copy Discord part ${safeIdx + 1}/${parts.length}`}
+                            </button>
+                          ) : (
+                            <button
+                              className={`copy primary-copy ${copied === active.key ? 'done' : ''}`}
+                              onClick={() => copy(active.key, active.text)}
+                            >
+                              {copied === active.key ? '✓ Copied' : '📋 Copy'}
+                            </button>
+                          )}
+                        </div>
+
+                        {!active.applicable && (
+                          <div className="na-note" style={{ marginBottom: 12 }}>
+                            This release doesn’t have anything for {active.channel}. Shown anyway in
+                            case you want it.
+                          </div>
+                        )}
+
+                        {needsSplit && (
+                          <div className="discord-split">
+                            <strong>Discord will turn this into a .txt file if you paste it all at once.</strong>
+                            <p>
+                              Free accounts: <strong>2000</strong> chars/message. Nitro: <strong>4000</strong>.
+                              Server boosts do <em>not</em> raise that. This post is {active.length} chars,
+                              so paste it as <strong>{parts.length} messages</strong> in order.
+                            </p>
+                            <div className="chunk-actions">
+                              {parts.map((chunk, i) => (
+                                <button
+                                  key={i}
+                                  className={`copy ${copied === `${active.key}-${i}` ? 'done' : ''} ${i === safeIdx ? 'next' : ''}`}
+                                  onClick={() => copyDiscordPart(i)}
+                                >
+                                  {copied === `${active.key}-${i}`
+                                    ? `✓ Part ${i + 1}`
+                                    : `Part ${i + 1}/${parts.length} (${chunk.length} chars)`}
+                                </button>
+                              ))}
+                              <button
+                                className={`copy ${copied === active.key ? 'done' : ''}`}
+                                onClick={() => copy(active.key, active.text)}
+                              >
+                                {copied === active.key ? '✓ Full copied' : 'Copy full (for editing)'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <pre className="msg">{active.text}</pre>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </>
