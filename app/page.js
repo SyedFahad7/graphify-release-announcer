@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import AnnouncementsPanel from './AnnouncementsPanel';
 
 const MAX_COMBINE = 4;
 const MIN_COMBINE = 2;
@@ -19,6 +20,7 @@ function fmtDate(d) {
 }
 
 export default function Page() {
+  const [studio, setStudio] = useState('releases'); // 'releases' | 'announcements'
   const [releases, setReleases] = useState([]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -97,9 +99,10 @@ export default function Page() {
   }, [selected, noLlm]);
 
   useEffect(() => {
+    if (studio !== 'releases') return;
     loadList();
     generate(null);
-  }, [loadList, generate]);
+  }, [studio, loadList, generate]);
 
   const copy = async (key, text) => {
     try {
@@ -133,16 +136,34 @@ export default function Page() {
     <div className="wrap">
       <div className="hero">
         <div>
-          <h1>Graphify Release Announcer</h1>
+          <h1>Graphify Discord Studio</h1>
           <p>
-            One click turns Graphify releases into a ready-to-paste Discord
-            announcement. Missed a couple? Switch to Combine and pick 2–4 tags.
-            Nothing is posted; you copy and paste it yourself.
+            Draft ready-to-paste posts for <strong>#production-releases</strong> and{' '}
+            <strong>#announcements</strong>. Nothing is posted automatically; you copy and paste.
           </p>
         </div>
         <div className="repo-badge">Graphify-Labs/graphify</div>
       </div>
 
+      <div className="studio-tabs">
+        <button
+          className={`studio-tab ${studio === 'releases' ? 'active' : ''}`}
+          onClick={() => setStudio('releases')}
+        >
+          Releases
+        </button>
+        <button
+          className={`studio-tab ${studio === 'announcements' ? 'active' : ''}`}
+          onClick={() => setStudio('announcements')}
+        >
+          Announcements
+        </button>
+      </div>
+
+      {studio === 'announcements' && <AnnouncementsPanel />}
+
+      {studio === 'releases' && (
+        <>
       <div className="mode-tabs">
         <button
           className={`mode-tab ${mode === 'single' ? 'active' : ''}`}
@@ -387,6 +408,8 @@ export default function Page() {
           )}
         </main>
       </div>
+        </>
+      )}
     </div>
   );
 }

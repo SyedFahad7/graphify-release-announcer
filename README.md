@@ -1,15 +1,14 @@
-# graphify-release-announcer
+# graphify-release-announcer (Discord Studio)
 
-Your **personal release tracker + Discord message generator** for Graphify. Two ways to use it:
+Your **personal Discord draft studio** for Graphify. Two surfaces on one Vercel site:
 
-- **Web app** (one click) — open the site, hit **Check latest release**, get a ready-to-paste
-  announcement for each channel (Production / Feature / Security / Beta), copy, done. Deploy free on Vercel.
-- **CLI** — the same thing in your terminal (`generate`, `list`, `track`, `--copy`).
+1. **Releases** — Coolify-style `#production-releases` posts (single tag or combine 2–4).
+2. **Announcements** — `#announcements` drafts from Safi’s X, `@graphify`, star milestones
+   (80k / 90k / 100k), and the latest release teaser. Compose from a tweet/release URL too.
 
-Whenever a release drops it hands you a **ready-to-paste, Coolify-style announcement** — a role ping,
-a one-line summary, then clean grouped highlights and a link to the full notes. You review and paste.
+**It does not post anything on its own.** You copy and paste.
 
-**It does not post anything on its own.** It's a tool you run for yourself, not a bot.
+CLI still covers the release tracker (`generate`, `list`, `track`, `combine`, `--copy`).
 
 > Modeled on how teams like Coolify announce releases: `@Production Releases – vX.Y.Z is now live`,
 > grouped highlights (✨ New Features · 🐛 Notable Bug Fixes · 🔒 Security · ⚠️ Breaking · 🛠️ Integrations),
@@ -40,27 +39,32 @@ npm install
 npm run dev            # http://localhost:3000
 ```
 
-Open it and click **Check latest release**. You get a card per channel with a **Copy** button:
+Open the site:
 
-- **#production-releases** — the full post.
-- **#feature-releases** — just the new features + integrations (lighter).
-- **#security** — only shown/filled when the release has security fixes.
-- **#beta** — for prereleases.
+- **Releases** → **Check latest release** (or Combine 2–4) → Copy into `#production-releases`.
+- **Announcements** → **Check for news** → pick a signal → **Draft announcement** → Copy into `#announcements`.
 
-Toggle **Skip AI** to use the built-in parser instead of Claude (free, no key). The recent-releases
-sidebar lets you generate a post for any older version too.
+Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key).
 
 ### Deploy to Vercel (one-click site)
 
-1. Push this repo to GitHub (already done: `SyedFahad7/graphify-release-announcer`).
-2. On [vercel.com](https://vercel.com) → **Add New → Project** → import the repo. Framework: **Next.js**
-   (auto-detected). Click **Deploy**.
-3. *(Optional)* In **Project → Settings → Environment Variables**, add `ANTHROPIC_API_KEY` for
-   AI-polished wording. It's used only server-side (never exposed to the browser). Without it, the
-   built-in parser is used — still works great.
-4. Open your `*.vercel.app` URL and click **Check latest release**.
+1. Push this repo to GitHub (`SyedFahad7/graphify-release-announcer`).
+2. On [vercel.com](https://vercel.com) → **Add New → Project** → import the repo. Framework: **Next.js**.
+3. In **Project → Settings → Environment Variables**, add (server-side only):
 
-That's the "one click checks for the latest release" you wanted — no server to run.
+| Variable | Why |
+|----------|-----|
+| `ANTHROPIC_API_KEY` | Claude wording for releases + announcements |
+| `TWITTER_BEARER_TOKEN` | Same token as `graphify-social-bot` / `graphify-tweet-agent` (X read) |
+| `GITHUB_TOKEN` | Higher GitHub rate limit for stars + releases |
+| `DISCORD_NITRO=true` | Optional; 3900-char fit if your account has Nitro |
+| `ANNOUNCE_HANDLES` | Default `safishamsii,graphify` |
+| `STAR_MILESTONES` | Default `80000,90000,100000` |
+| `ANNOUNCE_PING` | Default `@everyone` (or an opt-in role text) |
+
+4. Open your `*.vercel.app` URL → **Announcements** → **Check for news**.
+
+Copy `TWITTER_BEARER_TOKEN` from `graphify-social-bot/.env` (do not commit it).
 
 ## CLI setup
 

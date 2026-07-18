@@ -53,6 +53,21 @@ const config = {
   // Clean, Coolify-style bullets: strip (#123) issue/PR refs and "thanks @x" credits,
   // keep lines short. Set CLEAN_STYLE=false for dev-detailed output (refs + credits kept).
   cleanStyle: bool(process.env.CLEAN_STYLE, true),
+
+  // --- #announcements studio ---
+  // Same Bearer as graphify-social-bot / graphify-tweet-agent (read-only X API v2).
+  twitterBearerToken: process.env.TWITTER_BEARER_TOKEN || '',
+  announceHandles: (process.env.ANNOUNCE_HANDLES || 'safishamsii,graphify')
+    .split(',')
+    .map((h) => h.trim().replace(/^@/, ''))
+    .filter(Boolean),
+  starMilestones: (process.env.STAR_MILESTONES || '80000,90000,100000')
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .sort((a, b) => a - b),
+  announcePing: process.env.ANNOUNCE_PING || '@everyone',
+  tweetsPerHandle: int(process.env.ANNOUNCE_TWEETS_PER_HANDLE, 8),
 };
 
 module.exports = config;
