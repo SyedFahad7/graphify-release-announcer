@@ -212,9 +212,19 @@ function buildAnnouncement(release, content, opts = {}) {
   return buildAnnouncementDetailed(release, content, opts).text;
 }
 
+// Follow-up parts must NOT ping again. Strip role mentions from parts 2+.
+function stripPings(text) {
+  return text
+    .replace(/<@&\d+>\s*/g, '')
+    .replace(/@(?:Production Releases|Feature Releases|Security|Beta Testers)\s+/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /**
- * Split a long announcement into <=2000 char chunks on paragraph boundaries so
- * it can be posted as consecutive Discord messages without breaking code blocks.
+ * Split a long announcement into Discord-sized chunks on paragraph boundaries.
+ * Only the first chunk keeps the @role ping so you never double-notify.
  */
 function chunkForDiscord(text, limit = DISCORD_LIMIT) {
   if (text.length <= limit) return [text];
@@ -245,7 +255,7 @@ function chunkForDiscord(text, limit = DISCORD_LIMIT) {
     }
   }
   if (cur) chunks.push(cur);
-  return chunks;
+  return chunks.map((c, i) => (i === 0 ? c : stripPings(c)));
 }
 
 module.exports = {

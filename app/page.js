@@ -348,11 +348,12 @@ export default function Page() {
 
                         {needsSplit && (
                           <div className="discord-split">
-                            <strong>Discord will turn this into a .txt file if you paste it all at once.</strong>
+                            <strong>Still over one Discord message.</strong>
                             <p>
-                              Free accounts: <strong>2000</strong> chars/message. Nitro: <strong>4000</strong>.
-                              Server boosts do <em>not</em> raise that. This post is {active.length} chars,
-                              so paste it as <strong>{parts.length} messages</strong> in order.
+                              Coolify’s big posts are ~3800 chars (short bullets + Nitro’s 4000 cap).
+                              Server boosts do not raise message length. This one is {active.length} chars.
+                              Paste as <strong>{parts.length} messages</strong>. Only part 1 has the
+                              @role ping, so people get notified once.
                             </p>
                             <div className="chunk-actions">
                               {parts.map((chunk, i) => (

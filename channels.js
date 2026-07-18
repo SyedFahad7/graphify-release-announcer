@@ -17,7 +17,15 @@ const P = () => config.productName;
 
 function makePost(key, label, channel, applicable, release, content, announceOpts) {
   const built = buildAnnouncementDetailed(release, content, announceOpts);
-  const chunks = chunkForDiscord(built.text);
+  // Chunk at the same Discord budget we fit to (2000 free / 3900 Nitro).
+  const budget =
+    announceOpts.fitLimit != null
+      ? announceOpts.fitLimit
+      : config.fitLimit > 0
+        ? config.fitLimit
+        : 1990;
+  const chunkLimit = budget > 0 ? Math.min(budget, 4000) : 1990;
+  const chunks = chunkForDiscord(built.text, chunkLimit);
   return {
     key,
     label,

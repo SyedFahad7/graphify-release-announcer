@@ -142,10 +142,10 @@ async function buildCombinedAnnouncement(tags, opts = {}) {
   const spanLabel = `${oldest.tag} → ${latest.tag}`;
   const releaseLinks = fetched.map((r) => ({ tag: r.tag, url: r.url }));
 
-  // Keep the full write-up. Discord's 2000 limit is handled via chunks in the UI.
+  // Fit one Discord message when possible (Coolify ~3800 with Nitro + short bullets).
+  // If it still overflows, chunks keep the @role ping on part 1 only.
   const posts = buildChannels(combinedRelease, content, {
     forPosting,
-    fitLimit: 0,
     combined: {
       tags: tagsOldestFirst,
       spanLabel,

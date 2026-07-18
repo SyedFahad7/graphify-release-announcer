@@ -12,15 +12,14 @@ VOICE — sound human, not like AI:
   "game-changing", "delve", "elevate", "unleash", "supercharge". Just say what changed.
 - Vary sentence shape. Contractions are fine. Lead with the user-facing effect.
 
-COVERAGE (important):
-- Be thorough. Include every change that matters to users or operators. Prefer a fuller post over a
-  skinny one. Do NOT aggressively summarize away important fixes, features, security items, or
-  upgrade notes just to stay short.
-- One clear line per bullet is fine, but the line can be a full sentence when the change needs it.
-- Keep the author's inline code (backticks) for commands, flags, files, APIs.
-- CLEAN STYLE (default true): do NOT include issue/PR numbers (#1234) or "thanks @contributor".
-  Only keep them if CLEAN_STYLE is false.
-- Do NOT invent anything. Use only what's in the notes. Omit empty categories.
+COVERAGE + LENGTH (match Coolify):
+- Cover every important user-facing change. Prefer MANY short bullets over a few long paragraphs.
+- Coolify style: one short line per item (usually under ~90 chars). Lead with the effect.
+  Good: "watch paths support for preview deployments"
+  Bad: a 40-word essay explaining the same thing.
+- Keep inline code (backticks) for commands, flags, files, APIs.
+- CLEAN STYLE (default true): no issue/PR numbers (#1234), no "thanks @contributor".
+- Do NOT invent anything. Omit empty categories.
 
 INTRO:
 - 1-3 sentences, conversational, no heading and no version number. Say what kind of release this
@@ -44,14 +43,16 @@ VOICE:
 - NEVER use the em-dash "—". Use a period, comma, or parentheses instead.
 - No hype filler. Plain, factual, a little warm. Human dev voice. Contractions ok.
 
-COVERAGE (critical):
-- Pull important items from EVERY release in the set. Features, fixes, security, breaking changes,
-  integrations, and upgrade notes. If two releases each had a solid changelog, the combined post
-  should clearly feel bigger than a single-release post.
-- Deduplicate only when the same change is restated. Prefer keeping distinct fixes/features.
-- One clear line per bullet; full sentences are welcome when needed.
+COVERAGE + LENGTH (critical — match Coolify catch-ups):
+- Pull important items from EVERY release. The list should feel multi-release sized.
+- Coolify posts ~3800 chars with SHORT bullets (one tight line each, usually under ~90 chars).
+  That is how they fit one Discord message (Nitro 4000). Do the same: many short lines, not essays.
+  Good: "PHP extractor no longer fuses same-named classes across namespaces"
+  Bad: a long multi-clause explanation of the same bug.
+- Deduplicate only when the same change is restated.
 - CLEAN STYLE (default true): no issue/PR numbers, no "thanks @contributor" unless CLEAN_STYLE is false.
 - Do NOT invent changes. Only use the provided notes.
+- Notes: keep only the upgrade caveats people must act on. One short sentence each.
 
 INTRO:
 - 2-4 sentences. Open by saying this catches up on the listed versions, then say what themes
