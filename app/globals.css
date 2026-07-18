@@ -60,12 +60,80 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mode-tab {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mode-tab:hover { color: var(--text); border-color: var(--accent); }
+.mode-tab.active {
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border: none;
+}
+
 .controls {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 28px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip {
+  border: 1px solid rgba(124, 92, 255, 0.45);
+  background: rgba(124, 92, 255, 0.12);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip.clear {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--muted);
+}
+.side-hint {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0 4px 12px;
+}
+.tag-row { display: flex; align-items: center; gap: 8px; }
+.check {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: transparent;
+  flex-shrink: 0;
+}
+.check.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.rel.locked { opacity: 0.35; cursor: not-allowed; }
+.cover-tags {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--amber);
 }
 .btn {
   border: 1px solid var(--border);

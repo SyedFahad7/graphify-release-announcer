@@ -106,6 +106,37 @@ async function cmdGenerate(positional, flags) {
   await produce(release, flags);
 }
 
+// Catch-up post from 2–4 tags you missed announcing.
+async function cmdCombine(positional, flags) {
+  const { buildCombinedAnnouncement } = require('./combine');
+  if (positional.length < 2 || positional.length > 4) {
+    console.error('Usage: node index.js combine <tag1> <tag2> [tag3] [tag4] [--copy] [--no-llm]');
+    process.exit(1);
+  }
+  const result = await buildCombinedAnnouncement(positional, {
+    noLlm: flags.noLlm,
+    log: (m) => console.log(`  ↳ ${m}`),
+  });
+  const pasteText = result.posts.find((p) => p.key === 'production')?.text || result.posts[0]?.text;
+  console.log(`\nCombined: ${result.release.spanLabel}`);
+  console.log(`Covers: ${result.tags.join(' · ')}`);
+  if (!flags.noSave) {
+    const file = saveOutput({ tag: `combined-${result.release.tag}` }, pasteText);
+    console.log(`  ↳ saved → ${path.relative(process.cwd(), file)}`);
+  }
+  if (flags.copy) {
+    const ok = copyToClipboard(pasteText);
+    console.log(ok ? '  ↳ 📋 copied to clipboard' : '  ↳ clipboard copy failed');
+  }
+  console.log('\n' + '─'.repeat(72));
+  console.log(pasteText);
+  console.log('─'.repeat(72) + '\n');
+  if (/…and \d+ more/.test(pasteText)) {
+    console.error('BUG: output still contains "…and N more"');
+    process.exit(1);
+  }
+}
+
 // Show recent releases and flag which ones you haven't generated a draft for yet.
 async function cmdList(positional, flags) {
   const n = parseInt(positional[0], 10) || 10;
@@ -202,6 +233,9 @@ async function main() {
     case 'post':
       await cmdGenerate(positional, { ...flags, post: true });
       break;
+    case 'combine':
+      await cmdCombine(positional, flags);
+      break;
     case 'help':
     case '--help':
     case '-h':
@@ -227,6 +261,7 @@ Usage:
   node index.js check              One-shot version of track (generate a draft if latest is new)
   node index.js seed               Mark the current latest as handled (so 'track' only flags newer ones)
   node index.js post [tag]         (optional) Also post it to Discord yourself — needs Discord env
+  node index.js combine t1 t2 [t3] [t4]   Catch-up post spanning 2–4 releases you missed
 
 Flags:
   --copy            Copy the generated announcement to your clipboard (ready to paste)
@@ -239,7 +274,8 @@ Examples:
   node index.js generate --copy        # draft the latest release, straight to your clipboard
   node index.js generate v0.9.14       # draft a specific version
   node index.js list                   # what releases are out, and which I've handled
-  node index.js track --interval=15    # sit in the background, ping me when a release drops`);
+  node index.js track --interval=15    # sit in the background, ping me when a release drops
+  node index.js combine v0.9.16 v0.9.17 v0.9.18 --copy --no-llm`);
 }
 
 main().catch((err) => {

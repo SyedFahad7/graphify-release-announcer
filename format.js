@@ -97,8 +97,9 @@ function notesBlock(notes) {
   return `> **📝 Note**\n${body}`;
 }
 
-function footerBlock(release, style) {
-  const link = `Full release notes: ${release.url}`;
+function footerBlock(release, style, opts = {}) {
+  const cover = opts.coverNote ? ` (${opts.coverNote})` : '';
+  const link = `Full release notes${cover}: ${release.url}`;
   return style === 'quote' ? `> 📝 ${link}` : `**📝 ${link}**`;
 }
 
@@ -151,7 +152,7 @@ function renderAnnouncement(release, content, opts) {
 
   if (opts.includeInstall !== false) parts.push(installBlock(release));
 
-  parts.push(footerBlock(release, t.footerStyle));
+  parts.push(footerBlock(release, t.footerStyle, { coverNote: opts.coverNote }));
 
   return parts.join('\n\n');
 }

@@ -18,12 +18,16 @@ const P = () => config.productName;
 /**
  * From one release + grouped content, produce a post per channel.
  * Returns [{ key, label, channel, applicable, text }].
- * `applicable=false` posts (e.g. no security fixes this release) are included
- * so the UI can show/grey them; skip them when applicable is false if you like.
+ *
+ * opts.combined = { tags, spanLabel, coverNote } when spanning multiple releases.
  */
-function buildChannels(release, content, { forPosting = false } = {}) {
+function buildChannels(release, content, { forPosting = false, combined = null } = {}) {
   const tag = release.tag;
   const results = [];
+  const coverNote = combined?.coverNote || '';
+  const prodTitle = combined
+    ? `${P()} ${combined.spanLabel} is now live`
+    : `${P()} ${tag} is now live`;
 
   // 1) Production — the full post (stable releases).
   results.push({
@@ -34,7 +38,8 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, content, {
       forPosting,
       roleName: 'Production Releases',
-      title: `${P()} ${tag} is now live`,
+      title: prodTitle,
+      coverNote,
     }),
   });
 
@@ -49,8 +54,11 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, featureContent, {
       forPosting,
       roleName: 'Feature Releases',
-      title: `What's new in ${P()} ${tag}`,
+      title: combined
+        ? `What's new in ${P()} ${combined.spanLabel}`
+        : `What's new in ${P()} ${tag}`,
       showHighlights: false,
+      coverNote,
     }),
   });
 
@@ -64,9 +72,12 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, securityContent, {
       forPosting,
       roleName: 'Security',
-      title: `Security update in ${P()} ${tag} (upgrade recommended)`,
+      title: combined
+        ? `Security updates in ${P()} ${combined.spanLabel} (upgrade recommended)`
+        : `Security update in ${P()} ${tag} (upgrade recommended)`,
       showHighlights: false,
       includeInstall: true,
+      coverNote,
     }),
   });
 
@@ -79,7 +90,10 @@ function buildChannels(release, content, { forPosting = false } = {}) {
     text: buildAnnouncement(release, content, {
       forPosting,
       roleName: 'Beta Testers',
-      title: `${P()} ${tag} (beta) is ready for testing`,
+      title: combined
+        ? `${P()} ${combined.spanLabel} (beta) is ready for testing`
+        : `${P()} ${tag} (beta) is ready for testing`,
+      coverNote,
     }),
   });
 
