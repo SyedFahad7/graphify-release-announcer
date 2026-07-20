@@ -43,8 +43,9 @@ Open the site:
 
 - **Releases** → **Check latest release** (or Combine 2–4) → Copy into `#production-releases`.
 - **Announcements** → **Check for news** → pick a signal → **Draft announcement** → Copy into `#announcements`.
+- Optional checkbox **Create image too** — Claude brainstorms a Graphify-branded brief (from `DESIGN.md` / `brand/announce-image.md`), then renders an SVG poster. With `OPENAI_API_KEY`, `auto` engine also tries a photoreal/raster PNG. Download attaches to Discord yourself (never auto-posts).
 
-Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key).
+Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key). Image generation requires Claude.
 
 ### Deploy to Vercel (one-click site)
 
@@ -54,9 +55,12 @@ Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic 
 
 | Variable | Why |
 |----------|-----|
-| `ANTHROPIC_API_KEY` | Claude wording for releases + announcements |
+| `ANTHROPIC_API_KEY` | Claude wording for releases + announcements + image art direction / SVG |
 | `TWITTER_BEARER_TOKEN` | Same token as `graphify-social-bot` / `graphify-tweet-agent` (X read) |
 | `GITHUB_TOKEN` | Higher GitHub rate limit for stars + releases |
+| `OPENAI_API_KEY` | Optional; only if you want raster PNG via `gpt-image-1.5` |
+| `ANNOUNCE_IMAGE_ENGINE` | Default `anthropic` (Claude SVG). `auto` / `openai` if you add OpenAI later |
+| `ANTHROPIC_IMAGE_MODEL` | Default = `ANTHROPIC_MODEL` / `claude-sonnet-4-6` |
 | `DISCORD_NITRO=true` | Optional; 3900-char fit if your account has Nitro |
 | `ANNOUNCE_HANDLES` | Default `safishamsii,graphify` |
 | `STAR_MILESTONES` | Default `80000,90000,100000` |

@@ -68,6 +68,16 @@ const config = {
     .sort((a, b) => a - b),
   announcePing: process.env.ANNOUNCE_PING || '@everyone',
   tweetsPerHandle: int(process.env.ANNOUNCE_TWEETS_PER_HANDLE, 8),
+
+  // Announcement images: Claude brainstorms + SVG; optional OpenAI for raster PNG.
+  // Anthropic cannot emit PNGs — it owns taste / SVG. Engine: anthropic | openai | auto.
+  anthropicImageModel: process.env.ANTHROPIC_IMAGE_MODEL || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+  announceImageThinkingBudget: int(process.env.ANNOUNCE_IMAGE_THINKING_BUDGET, 8000),
+  // Default anthropic: Claude brief + SVG (no OpenAI required). Set auto if you add OPENAI_API_KEY.
+  announceImageEngine: (process.env.ANNOUNCE_IMAGE_ENGINE || 'anthropic').toLowerCase(),
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiImageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5',
+  openaiImageQuality: process.env.OPENAI_IMAGE_QUALITY || 'high',
 };
 
 module.exports = config;

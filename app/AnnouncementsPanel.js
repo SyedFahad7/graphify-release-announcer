@@ -42,6 +42,8 @@ export default function AnnouncementsPanel() {
   const [composeUrl, setComposeUrl] = useState('');
   const [composeNote, setComposeNote] = useState('');
   const [copied, setCopied] = useState('');
+  const [createImage, setCreateImage] = useState(false);
+  const [imagingId, setImagingId] = useState('');
 
   useEffect(() => {
     setDismissed(loadDismissed());
@@ -92,7 +94,7 @@ export default function AnnouncementsPanel() {
         const res = await fetch(`/api/announcements?mode=draft&nollm=${noLlm ? '1' : '0'}`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ signal }),
+          body: JSON.stringify({ signal, createImage }),
         });
         const json = await res.json();
         if (json.error) throw new Error(json.error);
@@ -104,7 +106,7 @@ export default function AnnouncementsPanel() {
         setDraftingId('');
       }
     },
-    [noLlm]
+    [noLlm, createImage]
   );
 
   const compose = useCallback(async () => {
@@ -121,6 +123,7 @@ export default function AnnouncementsPanel() {
         body: JSON.stringify({
           url: composeUrl.trim(),
           note: composeNote.trim(),
+          createImage,
         }),
       });
       const json = await res.json();
@@ -142,7 +145,91 @@ export default function AnnouncementsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [composeUrl, composeNote, noLlm]);
+  }, [composeUrl, composeNote, noLlm, createImage]);
+
+  const regenerateImage = useCallback(
+    async (signal) => {
+      const existing = drafts[signal.id];
+      setImagingId(signal.id);
+      setError('');
+      try {
+        const res = await fetch('/api/announcements?mode=image', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            signal,
+            draftText: existing?.text || '',
+          }),
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        setDrafts((prev) => ({
+          ...prev,
+          [signal.id]: {
+            ...(prev[signal.id] || { text: '', source: 'template', length: 0 }),
+            signal,
+            brief: json.brief,
+            image: json.image,
+            svg: json.svg,
+            engine: json.engine,
+            warning: json.warning,
+            imageError: undefined,
+          },
+        }));
+      } catch (e) {
+        setError(e.message || 'Image failed');
+      } finally {
+        setImagingId('');
+      }
+    },
+    [drafts]
+  );
+
+  const downloadDataUrl = (filename, dataUrl) => {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    a.click();
+  };
+
+  const downloadImage = async (draft, signal) => {
+    if (!draft?.image?.base64) return;
+    const mime = draft.image.mime || 'image/png';
+    const dataUrl = `data:${mime};base64,${draft.image.base64}`;
+    const base = `graphify-${(signal?.type || 'announce')}-${Date.now()}`;
+
+    if (mime.includes('svg')) {
+      try {
+        const png = await svgToPngDataUrl(dataUrl);
+        if (png) {
+          downloadDataUrl(`${base}.png`, png);
+          return;
+        }
+      } catch {
+        /* fall through to SVG */
+      }
+      downloadDataUrl(`${base}.svg`, dataUrl);
+      return;
+    }
+    downloadDataUrl(`${base}.png`, dataUrl);
+  };
+
+  const svgToPngDataUrl = (svgDataUrl) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 1024;
+        canvas.height = img.naturalHeight || 1024;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#f8f7f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('SVG rasterize failed'));
+      img.src = svgDataUrl;
+    });
 
   const dismiss = (id) => {
     setDismissed((prev) => {
@@ -176,6 +263,15 @@ export default function AnnouncementsPanel() {
             onChange={(e) => setSkipTwitter(e.target.checked)}
           />
           Skip Twitter
+        </label>
+        <label className="toggle" title="Claude brainstorms Graphify-branded art, then SVG (optional OpenAI PNG)">
+          <input
+            type="checkbox"
+            checked={createImage}
+            onChange={(e) => setCreateImage(e.target.checked)}
+            disabled={noLlm}
+          />
+          Create image too
         </label>
       </div>
 
@@ -267,18 +363,35 @@ export default function AnnouncementsPanel() {
                   <button
                     className="btn primary"
                     onClick={() => draftOne(activeSignal)}
-                    disabled={Boolean(draftingId)}
+                    disabled={Boolean(draftingId) || Boolean(imagingId)}
                   >
                     {draftingId === activeSignal.id
-                      ? 'Drafting…'
+                      ? createImage
+                        ? 'Drafting + designing…'
+                        : 'Drafting…'
                       : drafts[activeSignal.id]
                         ? '↻ Re-draft'
                         : '✦ Draft announcement'}
                   </button>
+                  {drafts[activeSignal.id] && (
+                    <button
+                      className="btn"
+                      onClick={() => regenerateImage(activeSignal)}
+                      disabled={Boolean(imagingId) || noLlm}
+                    >
+                      {imagingId === activeSignal.id ? 'Imaging…' : '🖼 Image only'}
+                    </button>
+                  )}
                   <button className="btn" onClick={() => dismiss(activeSignal.id)}>
                     Dismiss
                   </button>
                 </div>
+                {createImage && (
+                  <p className="na-note" style={{ marginTop: 10 }}>
+                    Claude art-directs from Graphify brand tokens + graph-G, then builds an SVG
+                    poster (download as PNG for Discord). Needs <code>ANTHROPIC_API_KEY</code>.
+                  </p>
+                )}
               </div>
 
               {activeDraft && (
@@ -302,6 +415,45 @@ export default function AnnouncementsPanel() {
                       : 'Template draft (no AI / fallback)'}
                   </div>
                   <pre className="msg">{activeDraft.text}</pre>
+                </div>
+              )}
+
+              {activeDraft?.imageError && (
+                <div className="error">Image: {activeDraft.imageError}</div>
+              )}
+
+              {activeDraft?.image?.base64 && (
+                <div className="card announce-image">
+                  <div className="bar">
+                    <span className="label">
+                      Announcement image
+                      <span className="sub">
+                        {' '}
+                        · {activeDraft.engine || activeDraft.image.provider}
+                        {activeDraft.brief?.surface ? ` · ${activeDraft.brief.surface}` : ''}
+                      </span>
+                    </span>
+                    <button
+                      className="copy"
+                      onClick={() => downloadImage(activeDraft, activeSignal)}
+                    >
+                      Download
+                    </button>
+                  </div>
+                  {activeDraft.warning && (
+                    <div className="na-note" style={{ marginBottom: 10 }}>
+                      Raster note: {activeDraft.warning}
+                    </div>
+                  )}
+                  {activeDraft.brief?.mood && (
+                    <p className="signal-summary">{activeDraft.brief.mood}</p>
+                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    className="announce-image-preview"
+                    alt={activeDraft.brief?.headline || 'Graphify announcement'}
+                    src={`data:${activeDraft.image.mime};base64,${activeDraft.image.base64}`}
+                  />
                 </div>
               )}
             </>
