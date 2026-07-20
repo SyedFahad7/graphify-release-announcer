@@ -4,7 +4,8 @@ Your **personal Discord draft studio** for Graphify. Two surfaces on one Vercel 
 
 1. **Releases** — Coolify-style `#production-releases` posts (single tag or combine 2–4).
 2. **Announcements** — `#announcements` drafts from Safi’s X, `@graphify`, star milestones
-   (80k / 90k / 100k), and the latest release teaser. Compose from a tweet/release URL too.
+   (80k / 90k / 100k), latest release teaser, **Exa** live web/news search, and **RSS**
+   (Google News + HN by default). Compose from a tweet / release / article URL too.
 
 **It does not post anything on its own.** You copy and paste.
 
@@ -69,6 +70,8 @@ Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic 
 |----------|-----|
 | `ANTHROPIC_API_KEY` | Claude wording for releases + announcements + image art direction / SVG |
 | `TWITTER_BEARER_TOKEN` | Same token as `graphify-social-bot` / `graphify-tweet-agent` (X read) |
+| `EXA_API_KEY` | Live Exa web/news search for press + blogs (dashboard.exa.ai) |
+| `ANNOUNCE_RSS_FEEDS` | Optional; defaults to Google News + HN Graphify feeds (no key) |
 | `GITHUB_TOKEN` | Higher GitHub rate limit for stars + releases |
 | `OPENAI_API_KEY` | Optional; only if you want raster PNG via `gpt-image-1.5` |
 | `ANNOUNCE_IMAGE_ENGINE` | Default `anthropic` (Claude SVG). `auto` / `openai` if you add OpenAI later |

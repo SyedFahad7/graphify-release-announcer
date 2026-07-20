@@ -1,16 +1,26 @@
+const config = require('../config');
 const github = require('../github');
 const { milestoneSignals } = require('./stars');
 const { fetchAnnounceTweets } = require('./twitter');
 const { tweetsToSignals } = require('./rank');
+const { fetchExaSignals, normalizeUrl } = require('./exa');
+const { fetchRssSignals } = require('./rss');
 
 /**
- * Gather ranked announcement signals (stars, tweets, latest release teaser).
+ * Gather ranked announcement signals:
+ * stars, tweets, latest release, Exa web search, RSS (Google News / HN / custom).
  */
-async function checkSignals({ includeTwitter = true } = {}) {
+async function checkSignals({
+  includeTwitter = true,
+  includeExa = true,
+  includeRss = true,
+} = {}) {
   const errors = [];
   let signals = [];
   let starsInfo = null;
   let twitterInfo = null;
+  let exaInfo = null;
+  let rssInfo = null;
 
   try {
     starsInfo = await milestoneSignals();
@@ -61,13 +71,39 @@ async function checkSignals({ includeTwitter = true } = {}) {
     errors.push(`release: ${err.message}`);
   }
 
+  if (includeExa) {
+    try {
+      exaInfo = await fetchExaSignals();
+      if (exaInfo.error) errors.push(`exa: ${exaInfo.error}`);
+      signals = signals.concat(exaInfo.signals || []);
+    } catch (err) {
+      errors.push(`exa: ${err.message}`);
+    }
+  }
+
+  if (includeRss) {
+    try {
+      rssInfo = await fetchRssSignals();
+      if (rssInfo.error) errors.push(`rss: ${rssInfo.error}`);
+      signals = signals.concat(rssInfo.signals || []);
+    } catch (err) {
+      errors.push(`rss: ${err.message}`);
+    }
+  }
+
   signals.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-  // Deduplicate by id
-  const seen = new Set();
+  // Deduplicate by id and by URL
+  const seenId = new Set();
+  const seenUrl = new Set();
   signals = signals.filter((s) => {
-    if (seen.has(s.id)) return false;
-    seen.add(s.id);
+    if (seenId.has(s.id)) return false;
+    seenId.add(s.id);
+    if (s.url) {
+      const u = normalizeUrl(s.url);
+      if (seenUrl.has(u)) return false;
+      seenUrl.add(u);
+    }
     return true;
   });
 
@@ -84,6 +120,24 @@ async function checkSignals({ includeTwitter = true } = {}) {
             tweetCount: (h.tweets || []).length,
             error: h.error || null,
           })),
+        }
+      : null,
+    exa: exaInfo
+      ? {
+          ok: exaInfo.ok,
+          resultCount: exaInfo.resultCount || 0,
+          signalCount: (exaInfo.signals || []).length,
+          error: exaInfo.error || null,
+          configured: Boolean(config.exaApiKey),
+        }
+      : null,
+    rss: rssInfo
+      ? {
+          ok: rssInfo.ok,
+          itemCount: rssInfo.itemCount || 0,
+          signalCount: (rssInfo.signals || []).length,
+          feedCount: rssInfo.feedCount || 0,
+          error: rssInfo.error || null,
         }
       : null,
     signals,
@@ -116,6 +170,22 @@ function manualSignal({ url, note, title }) {
     type = 'release';
     id = `release:${decodeURIComponent(releaseMatch[1])}`;
     resolvedTitle = title || `Release ${decodeURIComponent(releaseMatch[1])}`;
+  } else if (
+    type === 'manual' &&
+    /^https?:\/\//i.test(u) &&
+    !/github\.com\/[^/]+\/[^/]+\/releases\b/i.test(u)
+  ) {
+    // Article / blog / HN / press pasted by hand
+    type = 'news';
+    id = `news:manual:${Buffer.from(u).toString('base64url').slice(0, 40)}`;
+    resolvedTitle = title || `Coverage: ${u.replace(/^https?:\/\//, '').slice(0, 80)}`;
+  }
+
+  let host = null;
+  try {
+    host = new URL(u).hostname.replace(/^www\./, '');
+  } catch {
+    /* ignore */
   }
 
   return {
@@ -125,7 +195,11 @@ function manualSignal({ url, note, title }) {
     summary: note || u || resolvedTitle,
     url: u || null,
     score: 60,
-    meta: { manual: true },
+    meta: {
+      manual: true,
+      source: type === 'news' ? 'compose' : 'manual',
+      host,
+    },
   };
 }
 

@@ -26,6 +26,7 @@ const TYPE_LABEL = {
   milestone: 'Star milestone',
   tweet: 'X / Twitter',
   release: 'Release teaser',
+  news: 'Web / press',
   manual: 'Manual',
 };
 
@@ -59,6 +60,8 @@ export default function AnnouncementsPanel() {
   const [activeId, setActiveId] = useState(null);
   const [noLlm, setNoLlm] = useState(false);
   const [skipTwitter, setSkipTwitter] = useState(false);
+  const [skipExa, setSkipExa] = useState(false);
+  const [skipRss, setSkipRss] = useState(false);
   const [composeUrl, setComposeUrl] = useState('');
   const [composeNote, setComposeNote] = useState('');
   const [copied, setCopied] = useState('');
@@ -93,6 +96,8 @@ export default function AnnouncementsPanel() {
     try {
       const params = new URLSearchParams({ mode: 'check' });
       if (skipTwitter) params.set('notwitter', '1');
+      if (skipExa) params.set('noexa', '1');
+      if (skipRss) params.set('norss', '1');
       const res = await fetch(`/api/announcements?${params}`);
       const json = await readApiJson(res);
       setCheck(json);
@@ -103,7 +108,7 @@ export default function AnnouncementsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [skipTwitter]);
+  }, [skipTwitter, skipExa, skipRss]);
 
   const attachImage = useCallback(async (signal, draftText) => {
     setImagingId(signal.id);
@@ -280,8 +285,9 @@ export default function AnnouncementsPanel() {
   return (
     <div>
       <p className="studio-lead">
-        Check Safi’s X, @graphify, star milestones, and the latest release. Claude drafts a Coolify /
-        Cursor-style post for <strong>#announcements</strong>. Nothing is posted; you copy and paste.
+        Check Safi’s X, @graphify, star milestones, latest release, <strong>Exa</strong> web search, and{' '}
+        <strong>RSS</strong> (Google News / HN). Claude drafts a Coolify / Cursor-style post for{' '}
+        <strong>#announcements</strong>. Nothing is posted; you copy and paste.
       </p>
 
       {(check?.canon || activeDraft?.canon) && (
@@ -312,7 +318,23 @@ export default function AnnouncementsPanel() {
           />
           Skip Twitter
         </label>
-        <label className="toggle" title="Claude brainstorms Graphify-branded art, then SVG (optional OpenAI PNG)">
+        <label className="toggle" title="Needs EXA_API_KEY on Vercel — live web/news search">
+          <input
+            type="checkbox"
+            checked={skipExa}
+            onChange={(e) => setSkipExa(e.target.checked)}
+          />
+          Skip Exa
+        </label>
+        <label className="toggle" title="Google News + Hacker News RSS (no API key)">
+          <input
+            type="checkbox"
+            checked={skipRss}
+            onChange={(e) => setSkipRss(e.target.checked)}
+          />
+          Skip RSS
+        </label>
+        <label className="toggle" title="Claude brief + server poster template">
           <input
             type="checkbox"
             checked={createImage}
@@ -328,7 +350,7 @@ export default function AnnouncementsPanel() {
         <div className="compose-row">
           <input
             className="input grow"
-            placeholder="https://x.com/.../status/... or GitHub release URL"
+            placeholder="https://x.com/.../status/... · GitHub release · article / blog URL"
             value={composeUrl}
             onChange={(e) => setComposeUrl(e.target.value)}
           />
@@ -354,6 +376,21 @@ export default function AnnouncementsPanel() {
           <a href={check.stars.url} target="_blank" rel="noreferrer">
             {check.stars.fullName}
           </a>
+        </div>
+      )}
+
+      {(check?.exa || check?.rss) && (
+        <div className="stars-bar">
+          Web:{' '}
+          {check.exa
+            ? check.exa.configured === false
+              ? 'Exa not configured (set EXA_API_KEY)'
+              : `Exa ${check.exa.signalCount || 0} hits`
+            : 'Exa skipped'}
+          {' · '}
+          {check.rss
+            ? `RSS ${check.rss.signalCount || 0} from ${check.rss.feedCount || 0} feeds`
+            : 'RSS skipped'}
         </div>
       )}
 

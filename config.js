@@ -78,6 +78,19 @@ const config = {
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   openaiImageModel: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5',
   openaiImageQuality: process.env.OPENAI_IMAGE_QUALITY || 'high',
+
+  // Live web coverage (Exa) + RSS (Google News / HN / custom).
+  exaApiKey: process.env.EXA_API_KEY || '',
+  exaNumResults: int(process.env.EXA_NUM_RESULTS, 8),
+  exaQueries: (process.env.EXA_QUERIES || '')
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean),
+  rssFeeds: (process.env.ANNOUNCE_RSS_FEEDS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+  rssMaxPerFeed: int(process.env.ANNOUNCE_RSS_MAX_PER_FEED, 12),
 };
 
 module.exports = config;

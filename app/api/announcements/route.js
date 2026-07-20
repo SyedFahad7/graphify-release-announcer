@@ -36,10 +36,16 @@ export async function GET(request) {
   const mode = searchParams.get('mode') || 'check';
   const noLlm = searchParams.get('nollm') === '1';
   const skipTwitter = searchParams.get('notwitter') === '1';
+  const skipExa = searchParams.get('noexa') === '1';
+  const skipRss = searchParams.get('norss') === '1';
 
   try {
     if (mode === 'check') {
-      const result = await checkSignals({ includeTwitter: !skipTwitter });
+      const result = await checkSignals({
+        includeTwitter: !skipTwitter,
+        includeExa: !skipExa,
+        includeRss: !skipRss,
+      });
       return Response.json({ ...result, canon: canonMeta() });
     }
 

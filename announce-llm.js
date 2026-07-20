@@ -29,7 +29,7 @@ Format rules:
 - Keep under ~1800 characters (one Discord message).
 - No em-dash characters. Use commas or periods.
 - Do not invent facts, timelines, or download counts. Prefer skipping origin fluff.
-- Include a source URL only when it is the news itself (tweet, release). For milestones, a plain Repo line is optional, not a CTA pitch.`;
+- Include a source URL when the signal is the news itself (tweet, release, press/blog article). For milestones, a plain Repo line is optional, not a CTA pitch.`;
 }
 
 function userPrompt(signal) {
@@ -53,6 +53,7 @@ Type-specific:
 - milestone: celebrate the crossed number + current count if in meta. Thank the community once. No origin myths. No "please star" close. Keep it tight and human.
 - tweet: amplify in Discord voice; link the tweet; do not just paste the tweet.
 - release: short teaser; point to #production-releases for the full changelog; include release URL.
+- news: amplify press/blog/HN coverage in Discord voice; credit the source; link the article; do not invent quotes or metrics not in the summary.
 - manual: treat summary as the source material. Still no invented timelines or hard-sell CTAs.`;
 }
 
@@ -142,6 +143,22 @@ function templateDraft(signal) {
       signal.summary,
       '',
       url ? `Source: ${url}` : `via @${handle}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (signal.type === 'news') {
+    const host = signal.meta?.host || 'the web';
+    return [
+      `hey everyone ${emoji}`,
+      '',
+      `**${signal.title.replace(/^[^:]+:\s*/, '')}**`,
+      '',
+      signal.summary.slice(0, 280),
+      '',
+      `Spotted via ${host}${signal.meta?.source ? ` (${signal.meta.source})` : ''}.`,
+      url ? `Read: ${url}` : '',
     ]
       .filter(Boolean)
       .join('\n');
