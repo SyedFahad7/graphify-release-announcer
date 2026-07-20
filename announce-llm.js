@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
-const { deSlop } = require('./parse');
 const { chunkForDiscord } = require('./format');
 
 function loadVoiceDoc() {
