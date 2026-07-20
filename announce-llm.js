@@ -83,12 +83,21 @@ async function callClaude(user) {
     .map((b) => b.text)
     .join('')
     .trim();
-  return deSlop(text.replace(/^```(?:discord|md|markdown)?\n?/, '').replace(/\n?```$/, ''));
+  return softDeSlop(text.replace(/^```(?:discord|md|markdown)?\n?/, '').replace(/\n?```$/, ''));
+}
+
+/** Em-dash cleanup without collapsing newlines (parse.deSlop flattens whitespace). */
+function softDeSlop(s) {
+  return String(s || '')
+    .replace(/\s*—\s*/g, ', ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 /** Soft cleanup if the model still slips into hard-sell / fake timelines. */
 function humanizeAnnouncement(text, signal) {
-  let t = deSlop(text);
+  let t = softDeSlop(text);
 
   // Kill common hard-sell closes (keep a plain Repo: line if present earlier).
   t = t.replace(
@@ -202,6 +211,7 @@ async function draftAnnouncement(signal, { noLlm = false } = {}) {
   }
 
   text = humanizeAnnouncement(text, signal);
+  // Do not run parse.deSlop here — it collapses newlines into a single line.
   const budget = config.fitLimit > 0 ? Math.min(config.fitLimit, 1990) : 1990;
   if (text.length > budget) {
     text = `${text.slice(0, budget - 20).trim()}…`;
