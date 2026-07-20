@@ -7,6 +7,16 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Serverless/NFT otherwise skips brand PNGs (dynamic fs paths). Keep them in the
+  // /api/announcements lambda so Create image too can inject official logos.
+  outputFileTracingIncludes: {
+    '/api/announcements': [
+      './brand/logos/**/*',
+      './brand/announce-image.md',
+      './brand/graphify-design-dna.json',
+      './brand/design-dna/**/*',
+    ],
+  },
 };
 
 module.exports = nextConfig;

@@ -2,9 +2,47 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 
-const BRAND_PATH = path.join(__dirname, 'brand', 'announce-image.md');
-const DNA_PATH = path.join(__dirname, 'brand', 'graphify-design-dna.json');
-const LOGO_ROOT = path.join(__dirname, 'brand', 'logos');
+function firstExisting(...candidates) {
+  for (const p of candidates) {
+    if (p && fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+// On Vercel, __dirname may be a bundled chunk dir — prefer cwd (project root) then walk up.
+function resolveBrandFile(...parts) {
+  const rel = path.join(...parts);
+  return firstExisting(
+    path.join(process.cwd(), 'brand', rel),
+    path.join(__dirname, 'brand', rel),
+    path.join(__dirname, '..', 'brand', rel),
+    path.join(__dirname, '..', '..', 'brand', rel),
+    path.join(__dirname, '..', '..', '..', 'brand', rel)
+  );
+}
+
+function resolveLogoRoot() {
+  const probe = 'icons/white-no_bg.png';
+  const file = resolveBrandFile('logos', ...probe.split('/'));
+  if (!file) {
+    const tried = [
+      path.join(process.cwd(), 'brand', 'logos', probe),
+      path.join(__dirname, 'brand', 'logos', probe),
+    ];
+    throw new Error(
+      `Missing brand logo asset: ${probe} (cwd=${process.cwd()}, __dirname=${__dirname}; tried ${tried.join(' | ')})`
+    );
+  }
+  return path.dirname(path.dirname(file)); // .../brand/logos
+}
+
+const BRAND_PATH = resolveBrandFile('announce-image.md');
+const DNA_PATH = resolveBrandFile('graphify-design-dna.json');
+let LOGO_ROOT = null;
+function getLogoRoot() {
+  if (!LOGO_ROOT) LOGO_ROOT = resolveLogoRoot();
+  return LOGO_ROOT;
+}
 
 const DNA_QUALITY_CHECKS = `
 ## Design DNA quality checks (zanwei/design-dna generation guide)
@@ -25,6 +63,7 @@ const LOGO_FILES = {
 
 function loadBrandDoc() {
   try {
+    if (!BRAND_PATH) throw new Error('no brand md');
     return fs.readFileSync(BRAND_PATH, 'utf8');
   } catch {
     return 'Graphify terminal-luxury. Official logos only from brand/logos. Never invent a G mark.';
@@ -33,6 +72,7 @@ function loadBrandDoc() {
 
 function loadDesignDna() {
   try {
+    if (!DNA_PATH) return null;
     return JSON.parse(fs.readFileSync(DNA_PATH, 'utf8'));
   } catch {
     return null;
@@ -53,14 +93,34 @@ function logoTone(treatment) {
   return treatment === 'ink-on-cream' ? 'black' : 'white';
 }
 
+// Bundled into the serverless function (Vercel NFT often drops loose PNGs).
+let EMBEDDED_LOGOS = null;
+function embeddedLogos() {
+  if (EMBEDDED_LOGOS) return EMBEDDED_LOGOS;
+  try {
+    EMBEDDED_LOGOS = require('./brand/logo-assets');
+  } catch {
+    EMBEDDED_LOGOS = {};
+  }
+  return EMBEDDED_LOGOS;
+}
+
 function readLogoBase64(kind, treatment) {
   const k = LOGO_FILES[kind] ? kind : 'icon';
   const rel = LOGO_FILES[k][logoTone(treatment)];
-  const file = path.join(LOGO_ROOT, rel);
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing brand logo asset: ${rel}`);
+
+  const fromBundle = embeddedLogos()[rel];
+  if (fromBundle) return fromBundle;
+
+  try {
+    const file = path.join(getLogoRoot(), rel);
+    if (fs.existsSync(file)) return fs.readFileSync(file).toString('base64');
+    const alt = resolveBrandFile('logos', ...rel.split('/'));
+    if (alt && fs.existsSync(alt)) return fs.readFileSync(alt).toString('base64');
+  } catch {
+    /* fall through */
   }
-  return fs.readFileSync(file).toString('base64');
+  throw new Error(`Missing brand logo asset: ${rel}`);
 }
 
 function logoDataUri(kind, treatment) {
