@@ -388,8 +388,9 @@ export default function AnnouncementsPanel() {
                 </div>
                 {createImage && (
                   <p className="na-note" style={{ marginTop: 10 }}>
-                    Claude art-directs from Graphify brand tokens + graph-G, then builds an SVG
-                    poster (download as PNG for Discord). Needs <code>ANTHROPIC_API_KEY</code>.
+                    Claude art-directs atmosphere + type; official logo PNGs from{' '}
+                    <code>brand/logos</code> are injected (never redrawn). Download PNG for Discord.
+                    Needs <code>ANTHROPIC_API_KEY</code>.
                   </p>
                 )}
               </div>
