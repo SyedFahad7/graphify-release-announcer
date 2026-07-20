@@ -6,6 +6,7 @@ export const maxDuration = 120;
 import { checkSignals, manualSignal } from '../../../signals/check';
 import { draftAnnouncement } from '../../../announce-llm';
 import { generateAnnouncementImage } from '../../../announce-image';
+import { canonMeta } from '../../../lib/canon';
 
 async function withOptionalImage(signal, draft, { createImage, noLlm }) {
   if (!createImage) return { signal, ...draft, channel: '#announcements' };
@@ -39,7 +40,7 @@ export async function GET(request) {
   try {
     if (mode === 'check') {
       const result = await checkSignals({ includeTwitter: !skipTwitter });
-      return Response.json(result);
+      return Response.json({ ...result, canon: canonMeta() });
     }
 
     if (mode === 'draft') {

@@ -1,0 +1,45 @@
+{
+  "productName": "Graphify",
+  "company": "Graphify Labs",
+  "pypiPackage": "graphifyy",
+  "githubRepo": "Graphify-Labs/graphify",
+  "githubUrl": "https://github.com/Graphify-Labs/graphify",
+  "ycBatch": "S26",
+  "ycAnnouncedAt": "2026-05-22",
+  "firstPublicAt": "2026-04-03",
+  "originNote": "Started as a Claude Code skill; first public tag ~April 3, 2026.",
+  "preferSkipOriginStory": true,
+  "ctaPolicy": {
+    "milestones": "thank_only",
+    "tweets": "link_source",
+    "releases": "link_changelog",
+    "manual": "no_hard_sell"
+  },
+  "neverClaim": [
+    "a year ago",
+    "years ago",
+    "for over a year",
+    "since last year",
+    "years of work",
+    "drop a star",
+    "smash a star",
+    "leave a star",
+    "star the repo",
+    "if you haven't yet",
+    "keep the momentum",
+    "help us keep the momentum",
+    "thrilled",
+    "excited to announce",
+    "supercharge",
+    "game-changer"
+  ],
+  "bannedHardSellPatterns": [
+    "drop a star",
+    "smash a star",
+    "leave a star",
+    "star the repo",
+    "if you haven't yet",
+    "keep the momentum",
+    "help us keep the momentum"
+  ]
+}

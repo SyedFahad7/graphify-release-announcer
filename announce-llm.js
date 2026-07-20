@@ -1,39 +1,40 @@
-const fs = require('fs');
-const path = require('path');
 const config = require('./config');
 const { chunkForDiscord } = require('./format');
+const {
+  loadCanon,
+  canonPromptBlock,
+  projectAgeLabel,
+  validateAnnouncement,
+  softDeSlop,
+  canonMeta,
+} = require('./lib/canon');
 
-function loadVoiceDoc() {
-  try {
-    return fs.readFileSync(path.join(__dirname, 'brand', 'announce-voice.md'), 'utf8');
-  } catch {
-    return '';
-  }
-}
+function buildSystem() {
+  const { facts } = loadCanon();
+  return `You write Discord #announcements posts for Graphify Labs (YC ${facts.ycBatch || 'S26'}).
+Graphify is an open-source knowledge-graph memory layer for AI coding assistants (PyPI: ${facts.pypiPackage || config.pypiPackage}).
 
-const SYSTEM = `You write Discord #announcements posts for Graphify Labs (YC S26).
-Graphify is an open-source knowledge-graph memory layer for AI coding assistants (PyPI: ${config.pypiPackage}).
-
-${loadVoiceDoc()}
+${canonPromptBlock({ signalType: '*' })}
 
 Voice mix (Coolify + Cursor, not Mem0 hype):
 - Coolify: warm, honest, founder-like.
 - Cursor: short, punchy, no essay.
 - Human in the server, not a brand bot.
 
-Rules:
+Format rules:
 - Output ONLY the Discord message body. No markdown fences. No preamble.
 - Start with a short greeting + ${config.announcePing} when the news is server-wide (milestones, big product).
   For smaller tweet amplifications you may use a lighter open ("hey everyone" or just dive in).
 - Use the Graphify custom emoji ${config.releaseEmoji} at most once near the title line.
 - Keep under ~1800 characters (one Discord message).
 - No em-dash characters. Use commas or periods.
-- Do not invent facts, timelines, download counts, or "year ago" origin stories.
-- First public release was ~April 3, 2026. Project is months old, not a year+. Prefer skipping origin fluff.
-- Never hard-sell stars ("drop a star", "if you haven't yet", "keep the momentum"). Quiet repo link OK; asking people to star is not.
+- Do not invent facts, timelines, or download counts. Prefer skipping origin fluff.
 - Include a source URL only when it is the news itself (tweet, release). For milestones, a plain Repo line is optional, not a CTA pitch.`;
+}
 
 function userPrompt(signal) {
+  const { facts } = loadCanon();
+  const age = projectAgeLabel(facts);
   return `Write a ready-to-paste Discord #announcements post for this signal.
 
 Type: ${signal.type}
@@ -43,6 +44,8 @@ ${signal.summary}
 
 URL: ${signal.url || '(none)'}
 Meta JSON: ${JSON.stringify(signal.meta || {})}
+
+Canon age right now: ${age}. If you mention age, use that — never invent "a year ago".
 
 Channel: #announcements (community main, NOT #production-releases).
 
@@ -66,7 +69,7 @@ async function callClaude(user) {
     body: JSON.stringify({
       model: config.anthropicModel,
       max_tokens: 1200,
-      system: SYSTEM,
+      system: buildSystem(),
       messages: [{ role: 'user', content: user }],
     }),
   });
@@ -85,50 +88,17 @@ async function callClaude(user) {
   return softDeSlop(text.replace(/^```(?:discord|md|markdown)?\n?/, '').replace(/\n?```$/, ''));
 }
 
-/** Em-dash cleanup without collapsing newlines (parse.deSlop flattens whitespace). */
-function softDeSlop(s) {
-  return String(s || '')
-    .replace(/\s*—\s*/g, ', ')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-/** Soft cleanup if the model still slips into hard-sell / fake timelines. */
+/** @deprecated use validateAnnouncement — kept for scripts/tests */
 function humanizeAnnouncement(text, signal) {
-  let t = softDeSlop(text);
-
-  // Kill common hard-sell closes (keep a plain Repo: line if present earlier).
-  t = t.replace(
-    /\n*(?:If you haven'?t yet[^.]*\.\s*)?(?:Drop a star|Smash a star|Leave a star|Star the repo)[^\n]*/gi,
-    ''
-  );
-  t = t.replace(/\n*help us keep the momentum[^\n]*/gi, '');
-  t = t.replace(/\n*and help us keep[^\n]*/gi, '');
-
-  // Fake long timelines Graphify does not have.
-  t = t.replace(/\b[Aa] year ago\b/g, 'A few months ago');
-  t = t.replace(/\byears ago\b/gi, 'months ago');
-  t = t.replace(/\bfor over a year\b/gi, 'in just a few months');
-  t = t.replace(/\bsince last year\b/gi, 'since we launched');
-
-  // Milestone posts: strip trailing "please star" URL pitches but keep optional Repo: lines.
-  if (signal?.type === 'milestone') {
-    t = t.replace(
-      /\n*(?:Star (?:us|the repo|Graphify)[^\n]*\n?)?(?:https:\/\/github\.com\/Graphify-Labs\/graphify\/?\s*)$/i,
-      ''
-    );
-    // If the only URL left is a naked CTA at the end without "Repo:", drop it.
-    t = t.replace(/\n+https:\/\/github\.com\/Graphify-Labs\/graphify\/?\s*$/i, '');
-  }
-
-  return t.replace(/\n{3,}/g, '\n\n').trim();
+  return validateAnnouncement(text, signal).text;
 }
 
 function templateDraft(signal) {
   const ping = config.announcePing;
   const emoji = config.releaseEmoji;
   const url = signal.url || '';
+  const { facts } = loadCanon();
+  const age = projectAgeLabel(facts);
 
   if (signal.type === 'milestone') {
     const n = signal.meta?.milestone || signal.meta?.stars;
@@ -139,8 +109,8 @@ function templateDraft(signal) {
       `**Graphify just crossed ${Number(n).toLocaleString()} GitHub stars.**`,
       '',
       stars && Number(stars) !== Number(n)
-        ? `We're at ${Number(stars).toLocaleString()} right now. Still wild for something that was a tiny skill a few months ago.`
-        : `Still wild for an open-source knowledge-graph memory layer that started a few months ago.`,
+        ? `We're at ${Number(stars).toLocaleString()} right now. Still wild for something that was a tiny skill ${age} ago.`
+        : `Still wild for an open-source knowledge-graph memory layer that started ${age} ago.`,
       '',
       `Thank you for starring, filing issues, opening PRs, and actually using it.`,
       url ? `\nRepo: ${url}` : '',
@@ -191,7 +161,7 @@ function templateDraft(signal) {
 
 /**
  * Draft a Discord #announcements post for one signal.
- * Returns { text, source, length, chunks }.
+ * Returns { text, source, length, chunks, warnings, canon }.
  */
 async function draftAnnouncement(signal, { noLlm = false } = {}) {
   let text;
@@ -209,8 +179,9 @@ async function draftAnnouncement(signal, { noLlm = false } = {}) {
     text = templateDraft(signal);
   }
 
-  text = humanizeAnnouncement(text, signal);
-  // Do not run parse.deSlop here — it collapses newlines into a single line.
+  const validated = validateAnnouncement(text, signal);
+  text = validated.text;
+
   const budget = config.fitLimit > 0 ? Math.min(config.fitLimit, 1990) : 1990;
   if (text.length > budget) {
     text = `${text.slice(0, budget - 20).trim()}…`;
@@ -221,7 +192,14 @@ async function draftAnnouncement(signal, { noLlm = false } = {}) {
     source,
     length: text.length,
     chunks: chunks.length > 1 ? chunks : null,
+    warnings: validated.warnings,
+    canon: canonMeta(),
   };
 }
 
-module.exports = { draftAnnouncement, templateDraft, humanizeAnnouncement };
+module.exports = {
+  draftAnnouncement,
+  templateDraft,
+  humanizeAnnouncement,
+  validateAnnouncement,
+};

@@ -45,6 +45,18 @@ Open the site:
 - **Announcements** → **Check for news** → pick a signal → **Draft announcement** → Copy into `#announcements`.
 - Optional checkbox **Create image too** — Claude brainstorms from Graphify **Design DNA** (`brand/graphify-design-dna.json`, zanwei schema) + `brand/announce-image.md`, renders SVG atmosphere/type, then **injects official logo PNGs** from `brand/logos/` (never redraws the mark). Download for Discord yourself (never auto-posts).
 
+### Announcement canon (product memory)
+
+Drafts + images load a small shipped canon pack — not RAG:
+
+| File | Purpose |
+|------|---------|
+| `brand/canon/facts.json` | Launch date, package, CTA policy, neverClaim |
+| `brand/canon/voice.md` | Tone |
+| `brand/canon/lessons.json` | Append-only corrections when Claude slips |
+
+Runtime: [`lib/canon.js`](lib/canon.js) computes project age from `firstPublicAt`, injects into Claude, then `validateAnnouncement` strips hard-sell / fake timelines. New truth → edit JSON/MD → push. Optionally mirror into workspace `MEMORY.md`.
+
 Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key). Image generation requires Claude.
 
 ### Deploy to Vercel (one-click site)

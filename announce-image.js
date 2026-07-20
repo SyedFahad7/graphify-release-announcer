@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
+const { canonPromptBlock } = require('./lib/canon');
 
 function firstExisting(...candidates) {
   for (const p of candidates) {
@@ -312,11 +313,14 @@ Output ONLY valid JSON.`;
   const user = `${brand}
 ${dnaPromptBlock()}
 
+${canonPromptBlock({ signalType: signal.type, forImage: true })}
+
 ## Official logo images attached
 Image 1 = icon (graph-G wireframe mark). Image 2 = full lockup (mark + wordmark).
 These are the ONLY acceptable brand marks. Pick icon | wordmark | full for slots — the server embeds the real PNG files.
 
 Apply DNA priority: color & type first, then spacing/layout, then style mood, then lightweight SVG effects only.
+Image headline/subline must obey canon age + neverClaim (no "a year ago", no star-begging copy).
 
 ## Announcement signal
 Type: ${signal.type}
@@ -392,6 +396,8 @@ HARD RULES:
 
   const user = `${brand}
 ${dnaPromptBlock()}
+
+${canonPromptBlock({ signalType: signal.type, forImage: true })}
 
 Signal: ${signal.type} — ${signal.title}
 

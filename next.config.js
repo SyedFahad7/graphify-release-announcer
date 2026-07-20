@@ -15,8 +15,10 @@ const nextConfig = {
       './brand/logo-assets.js',
       './brand/announce-image.md',
       './brand/announce-voice.md',
+      './brand/canon/**/*',
       './brand/graphify-design-dna.json',
       './brand/design-dna/**/*',
+      './lib/canon.js',
     ],
   },
 };

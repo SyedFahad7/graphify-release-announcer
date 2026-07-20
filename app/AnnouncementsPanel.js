@@ -248,6 +248,18 @@ export default function AnnouncementsPanel() {
         Cursor-style post for <strong>#announcements</strong>. Nothing is posted; you copy and paste.
       </p>
 
+      {(check?.canon || activeDraft?.canon) && (
+        <div className="canon-hint">
+          Grounded on <code>brand/canon</code>
+          {' · '}
+          first public {(check?.canon || activeDraft?.canon).firstPublicAt}
+          {' · '}
+          {(check?.canon || activeDraft?.canon).projectAgeLabel}
+          {' · '}
+          edit facts/lessons in the repo, then redeploy
+        </div>
+      )}
+
       <div className="controls">
         <button className="btn primary" onClick={runCheck} disabled={loading}>
           {loading ? 'Checking…' : '↻ Check for news'}
@@ -415,6 +427,11 @@ export default function AnnouncementsPanel() {
                       ? 'Wording by Claude'
                       : 'Template draft (no AI / fallback)'}
                   </div>
+                  {activeDraft.warnings?.length > 0 && (
+                    <div className="na-note" style={{ marginTop: 10, marginBottom: 10 }}>
+                      Canon adjusted: {activeDraft.warnings.join(' · ')}
+                    </div>
+                  )}
                   <pre className="msg">{activeDraft.text}</pre>
                 </div>
               )}

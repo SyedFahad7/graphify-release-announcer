@@ -1,0 +1,23 @@
+[
+  {
+    "id": "no-year-ago-origin",
+    "date": "2026-07-21",
+    "bad": "A year ago this was a side project",
+    "rule": "First public tag was ~2026-04-03. Project is months old, not a year. Omit origin or use the computed age label from canon only.",
+    "appliesTo": ["milestone", "*"]
+  },
+  {
+    "id": "no-drop-a-star-cta",
+    "date": "2026-07-21",
+    "bad": "Drop a star and help us keep the momentum going",
+    "rule": "Milestones are thank_only. Never beg for stars. Optional quiet Repo: line only.",
+    "appliesTo": ["milestone", "*"]
+  },
+  {
+    "id": "no-invented-logo",
+    "date": "2026-07-21",
+    "bad": "hexagon G / serif G badge drawn as logo",
+    "rule": "Never redraw the Graphify mark. Official PNGs are injected via logo slots.",
+    "appliesTo": ["image"]
+  }
+]
