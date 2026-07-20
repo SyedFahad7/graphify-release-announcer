@@ -135,10 +135,23 @@ export async function POST(request) {
       if (noLlm) {
         return Response.json({ error: 'Create image needs Claude (uncheck Skip AI).' }, { status: 400 });
       }
-      const img = await generateAnnouncementImage(body.signal, {
-        draftText: body.draftText || '',
-      });
-      return Response.json({ signal: body.signal, ...img });
+      try {
+        const img = await generateAnnouncementImage(body.signal, {
+          draftText: body.draftText || '',
+        });
+        return Response.json({ signal: body.signal, ...img, canon: canonMeta() });
+      } catch (err) {
+        // Always JSON — Vercel platform crashes otherwise surface as "A server error…"
+        return Response.json(
+          {
+            signal: body.signal,
+            error: err.message || 'Image generation failed',
+            imageError: err.message || 'Image generation failed',
+            canon: canonMeta(),
+          },
+          { status: 500 }
+        );
+      }
     }
 
     return Response.json(

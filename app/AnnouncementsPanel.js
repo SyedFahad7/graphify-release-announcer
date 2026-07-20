@@ -29,6 +29,26 @@ const TYPE_LABEL = {
   manual: 'Manual',
 };
 
+/** Vercel sometimes returns plain text ("A server error…") instead of JSON. */
+async function readApiJson(res) {
+  const raw = await res.text();
+  let json;
+  try {
+    json = raw ? JSON.parse(raw) : {};
+  } catch {
+    const snippet = raw.replace(/\s+/g, ' ').trim().slice(0, 180);
+    throw new Error(
+      snippet
+        ? `Server returned non-JSON (${res.status}): ${snippet}`
+        : `Server returned empty non-JSON response (${res.status})`
+    );
+  }
+  if (!res.ok && json.error) throw new Error(json.error);
+  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
+  if (json.error) throw new Error(json.error);
+  return json;
+}
+
 export default function AnnouncementsPanel() {
   const [loading, setLoading] = useState(false);
   const [draftingId, setDraftingId] = useState('');
@@ -74,8 +94,7 @@ export default function AnnouncementsPanel() {
       const params = new URLSearchParams({ mode: 'check' });
       if (skipTwitter) params.set('notwitter', '1');
       const res = await fetch(`/api/announcements?${params}`);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
+      const json = await readApiJson(res);
       setCheck(json);
       const visible = (json.signals || []).filter((s) => !loadDismissed().has(s.id));
       if (visible[0]) setActiveId(visible[0].id);
@@ -86,27 +105,69 @@ export default function AnnouncementsPanel() {
     }
   }, [skipTwitter]);
 
+  const attachImage = useCallback(async (signal, draftText) => {
+    setImagingId(signal.id);
+    try {
+      const res = await fetch('/api/announcements?mode=image', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ signal, draftText: draftText || '' }),
+      });
+      const json = await readApiJson(res);
+      setDrafts((prev) => ({
+        ...prev,
+        [signal.id]: {
+          ...(prev[signal.id] || { text: draftText || '', source: 'template', length: 0 }),
+          signal,
+          brief: json.brief,
+          image: json.image,
+          svg: json.svg,
+          engine: json.engine,
+          warning: json.warning,
+          imageError: undefined,
+        },
+      }));
+    } catch (e) {
+      setDrafts((prev) => ({
+        ...prev,
+        [signal.id]: {
+          ...(prev[signal.id] || { text: draftText || '', source: 'template', length: 0 }),
+          signal,
+          imageError: e.message || 'Image failed',
+        },
+      }));
+      setError(e.message || 'Image failed');
+    } finally {
+      setImagingId('');
+    }
+  }, []);
+
   const draftOne = useCallback(
     async (signal) => {
       setDraftingId(signal.id);
       setError('');
       try {
+        // Draft text alone first — combined draft+image often times out on Vercel
+        // as plain "A server error…" (non-JSON). Image is a second request.
         const res = await fetch(`/api/announcements?mode=draft&nollm=${noLlm ? '1' : '0'}`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ signal, createImage }),
+          body: JSON.stringify({ signal, createImage: false }),
         });
-        const json = await res.json();
-        if (json.error) throw new Error(json.error);
+        const json = await readApiJson(res);
         setDrafts((prev) => ({ ...prev, [signal.id]: json }));
         setActiveId(signal.id);
+        if (createImage && !noLlm) {
+          setDraftingId('');
+          await attachImage(signal, json.text);
+        }
       } catch (e) {
         setError(e.message || 'Draft failed');
       } finally {
         setDraftingId('');
       }
     },
-    [noLlm, createImage]
+    [noLlm, createImage, attachImage]
   );
 
   const compose = useCallback(async () => {
@@ -123,11 +184,10 @@ export default function AnnouncementsPanel() {
         body: JSON.stringify({
           url: composeUrl.trim(),
           note: composeNote.trim(),
-          createImage,
+          createImage: false,
         }),
       });
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
+      const json = await readApiJson(res);
       setDrafts((prev) => ({ ...prev, [json.signal.id]: json }));
       setActiveId(json.signal.id);
       setCheck((prev) => {
@@ -136,53 +196,29 @@ export default function AnnouncementsPanel() {
           signals.unshift(json.signal);
         }
         return {
-          ...(prev || { checkedAt: new Date().toISOString(), errors: [] }),
+          ...(prev || { checkedAt: new Date().toISOString(), errors: [], canon: prev?.canon }),
           signals,
+          canon: prev?.canon || json.canon,
         };
       });
+      if (createImage && !noLlm) {
+        setLoading(false);
+        await attachImage(json.signal, json.text);
+      }
     } catch (e) {
       setError(e.message || 'Compose failed');
     } finally {
       setLoading(false);
     }
-  }, [composeUrl, composeNote, noLlm, createImage]);
+  }, [composeUrl, composeNote, noLlm, createImage, attachImage]);
 
   const regenerateImage = useCallback(
     async (signal) => {
       const existing = drafts[signal.id];
-      setImagingId(signal.id);
       setError('');
-      try {
-        const res = await fetch('/api/announcements?mode=image', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            signal,
-            draftText: existing?.text || '',
-          }),
-        });
-        const json = await res.json();
-        if (json.error) throw new Error(json.error);
-        setDrafts((prev) => ({
-          ...prev,
-          [signal.id]: {
-            ...(prev[signal.id] || { text: '', source: 'template', length: 0 }),
-            signal,
-            brief: json.brief,
-            image: json.image,
-            svg: json.svg,
-            engine: json.engine,
-            warning: json.warning,
-            imageError: undefined,
-          },
-        }));
-      } catch (e) {
-        setError(e.message || 'Image failed');
-      } finally {
-        setImagingId('');
-      }
+      await attachImage(signal, existing?.text || '');
     },
-    [drafts]
+    [drafts, attachImage]
   );
 
   const downloadDataUrl = (filename, dataUrl) => {

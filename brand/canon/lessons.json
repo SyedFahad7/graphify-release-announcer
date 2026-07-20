@@ -19,5 +19,12 @@
     "bad": "hexagon G / serif G badge drawn as logo",
     "rule": "Never redraw the Graphify mark. Official PNGs are injected via logo slots.",
     "appliesTo": ["image"]
+  },
+  {
+    "id": "no-more-coming-soon",
+    "date": "2026-07-21",
+    "bad": "More coming soon",
+    "rule": "Drop vague filler closers. End on thanks or a quiet complete Repo: URL line.",
+    "appliesTo": ["milestone", "*"]
   }
 ]
