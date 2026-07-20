@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "name": "Graphify terminal-luxury (announcement posters)",
+    "description": "Design DNA for Discord/social announcement graphics. Distilled from DESIGN.md + graphify.com + official logo PNGs. Never invent logos.",
+    "source_references": [
+      "DESIGN.md",
+      "graphify.com",
+      "brand/logos/*",
+      "zanwei/design-dna schema"
+    ],
+    "created_at": "2026-07-21"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "analogous",
+      "primary": { "hex": "#16211b", "role": "ink / primary actions / dark type" },
+      "secondary": { "hex": "#f8f7f0", "role": "cream paper background / light type on dark" },
+      "accent": { "hex": "#c6841c", "role": "amber memory — brand highlight only, not fill" },
+      "neutral": {
+        "scale": ["#f8f7f0", "#fdfcf6", "#edeee2", "#e0e2d3", "#626b60", "#16211b", "#052019", "#062a22"],
+        "usage": "cream surfaces → sage hairlines → muted labels → ink → footer green"
+      },
+      "semantic": {
+        "success": "#0e9e76",
+        "warning": "#c6841c",
+        "error": "#b3402a",
+        "info": "#3fd7a2"
+      },
+      "surface": {
+        "background": "#f8f7f0",
+        "card": "#fdfcf6",
+        "elevated": "#edeee2"
+      },
+      "contrast_strategy": "cream-on-deep-green or ink-on-cream; high contrast type; accents sparse"
+    },
+    "typography": {
+      "type_scale": {
+        "display": { "size": "120-220px poster", "weight": "600-700", "line_height": "0.9-1.02", "tracking": "tight negative" },
+        "heading_1": { "size": "48-72px", "weight": "600", "line_height": "1.05", "tracking": "-0.02em" },
+        "heading_2": { "size": "28-36px", "weight": "600", "line_height": "1.15", "tracking": "-0.01em" },
+        "heading_3": { "size": "18-22px", "weight": "600", "line_height": "1.25", "tracking": "0" },
+        "body": { "size": "16-18px", "weight": "400", "line_height": "1.45", "tracking": "0" },
+        "body_small": { "size": "13-14px", "weight": "400", "line_height": "1.4", "tracking": "0" },
+        "caption": { "size": "11-12px", "weight": "400", "line_height": "1.35", "tracking": "0.02em" },
+        "overline": { "size": "10-12px", "weight": "500", "line_height": "1.2", "tracking": "0.16-0.2em" }
+      },
+      "font_families": {
+        "heading": "Bricolage Grotesque / geometric grotesque fallback system-ui",
+        "body": "Geist Sans / system-ui",
+        "mono": "Geist Mono / ui-monospace"
+      },
+      "font_style_notes": "Tight display tracking; mono uppercase eyebrows; never Inter/Roboto as personality"
+    },
+    "spacing": {
+      "base_unit": "8px",
+      "scale": [8, 16, 24, 32, 48, 64, 96, 128],
+      "content_density": "spacious",
+      "section_rhythm": "macro whitespace; one breathing zone around the signature"
+    },
+    "layout": {
+      "grid_system": "loose poster grid, not dashboard",
+      "max_content_width": "1024px square or 1200x630",
+      "columns": "asymmetric 2-zone preferred",
+      "gutter": "48-72px margins from edges",
+      "breakpoints": ["n/a static poster"],
+      "alignment_tendency": "asymmetric"
+    },
+    "shape": {
+      "border_radius": { "small": "6px", "medium": "12px", "large": "16px", "pill": "999px" },
+      "border_usage": "hairline sage #e0e2d3 or white/10 on dark — never heavy gray cards",
+      "divider_style": "0.8px hairline"
+    },
+    "elevation": {
+      "shadow_style": "none",
+      "levels": { "low": "none", "medium": "none", "high": "none" },
+      "depth_cues": "gradient atmosphere, overlapping soft light, grain — not drop shadows"
+    },
+    "iconography": {
+      "style": "official wireframe graph-G PNG only",
+      "stroke_weight": "n/a — use brand/logos assets",
+      "size_scale": "72-96px icon; 240-320px full lockup",
+      "preferred_set": ["brand/logos/icons", "brand/logos/wordmark", "brand/logos/full"]
+    },
+    "motion": {
+      "easing": "static poster — no motion required",
+      "duration_scale": { "micro": "0", "normal": "0", "macro": "0" },
+      "entrance_pattern": "none",
+      "exit_pattern": "none",
+      "philosophy": "none"
+    },
+    "components": {
+      "button_style": "n/a on poster",
+      "input_style": "n/a",
+      "card_style": "avoid cards unless whole piece is a terminal panel",
+      "navigation_pattern": "n/a",
+      "modal_style": "n/a",
+      "list_style": "n/a",
+      "component_notes": "Poster = logo slots + type + atmosphere. No UI chrome."
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": ["restrained", "confident", "quietly technical", "warm", "cinematic"],
+      "visual_metaphor": "well-designed terminal that happens to have great taste; knowledge graph as structure",
+      "era_influence": "contemporary developer tools (Linear craft bar) × terminal warmth — not purple AI kits",
+      "genre": "terminal-luxury / developer infrastructure",
+      "personality_traits": ["meticulous", "calm", "proud without hype", "on-device honest"],
+      "adjectives": ["premium", "sparse", "grounded", "green-black"]
+    },
+    "visual_language": {
+      "complexity": "minimal",
+      "ornamentation": "subtle accents",
+      "whitespace_usage": "generous / macro",
+      "visual_weight_distribution": "one heavy signature; quiet surroundings",
+      "focal_strategy": "single hero element",
+      "contrast_level": "high for type; soft for atmosphere",
+      "texture_usage": "fine film grain / feTurbulence low opacity; organic soft gradients in brand greens"
+    },
+    "composition": {
+      "hierarchy_method": "scale contrast + spatial isolation",
+      "balance_type": "asymmetric",
+      "flow_direction": "Z or left-weight editorial",
+      "grouping_strategy": "logo lockup separate from news fact",
+      "negative_space_role": "prestige — empty is intentional"
+    },
+    "imagery": {
+      "photo_treatment": "n/a — abstract atmosphere preferred",
+      "illustration_style": "wireframe graph fields in brand colors only; never invent logo geometry",
+      "graphic_elements": ["hero green gradient melt", "subtle node field (sparse, not wallpaper)", "hairline crop hints"],
+      "pattern_usage": "sparse; avoid uniform faint node grids",
+      "image_shape": "full-bleed square"
+    },
+    "interaction_feel": {
+      "feedback_style": "n/a static",
+      "hover_behavior": "n/a",
+      "transition_personality": "n/a",
+      "loading_style": "n/a",
+      "microinteraction_density": "none"
+    },
+    "brand_voice_in_ui": {
+      "tone": "human, proof-forward, no thrilled/supercharge",
+      "formality": "casual-pro",
+      "cta_style": "subtle suggestion or none on image",
+      "empty_state_approach": "n/a",
+      "error_tone": "n/a"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "subtle-accent",
+      "performance_tier": "lightweight",
+      "fallback_strategy": "static SVG gradients + grain",
+      "primary_technology": "SVG + feTurbulence grain"
+    },
+    "background_effects": {
+      "type": "mesh-gradient",
+      "description": "Deep green cinematic melt (#062a22→cream) or ink void; soft radial light under the signature",
+      "technology": "SVG gradients",
+      "params": {
+        "color_palette": ["#062a22", "#0a3f31", "#124f3c", "#1e6149", "#4f8a68", "#a8c9ad", "#f8f7f0"],
+        "speed": "0",
+        "density": "soft",
+        "opacity": "1",
+        "blend_mode": "normal"
+      }
+    },
+    "particle_systems": {
+      "enabled": false,
+      "type": "connected-nodes",
+      "description": "If used: sparse graph nodes only, brand green/cream — never dense wallpaper",
+      "technology": "SVG",
+      "params": {
+        "count": 12,
+        "shape": "circle",
+        "size_range": [2, 4],
+        "movement_pattern": "static",
+        "color_behavior": "fixed #3fd7a2 at low opacity",
+        "interaction": "none",
+        "spawn_area": "edges only"
+      }
+    },
+    "3d_elements": {
+      "enabled": false,
+      "type": "abstract-geometry",
+      "description": "Prefer 2D; no fake 3D logo prisms",
+      "technology": "none",
+      "params": {
+        "renderer": "none",
+        "lighting": "none",
+        "camera": "none",
+        "materials": "none",
+        "geometry": "none",
+        "post_processing": [],
+        "interaction_model": "none"
+      }
+    },
+    "shader_effects": {
+      "enabled": false,
+      "type": "noise-distortion",
+      "description": "Optional subtle noise via SVG filter only",
+      "technology": "SVG feTurbulence",
+      "params": {
+        "uniforms": {},
+        "vertex_manipulation": false,
+        "fragment_output": "grain overlay",
+        "noise_type": "fbm",
+        "distortion": "opacity 0.04-0.08"
+      }
+    },
+    "scroll_effects": {
+      "parallax": { "enabled": false, "layers": "0", "depth_range": "0", "speed_curve": "none" },
+      "scroll_triggered_animations": {
+        "enabled": false,
+        "trigger_points": [],
+        "animation_type": "none",
+        "scrub_behavior": "none"
+      },
+      "scroll_morphing": { "enabled": false, "description": "n/a" }
+    },
+    "text_effects": {
+      "type": "none",
+      "description": "Typography hierarchy only — no glitch/typewriter on posters",
+      "technology": "SVG text",
+      "params": {
+        "split_strategy": "none",
+        "animation_per_unit": "none",
+        "stagger": "0",
+        "effect_style": "tight display + mono overline"
+      }
+    },
+    "cursor_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "n/a",
+      "params": { "shape": "none", "size": "0", "blend_mode": "normal", "trail": false, "interaction_zone": "0" }
+    },
+    "image_effects": {
+      "type": "none",
+      "description": "Official logo PNGs injected as crisp <image> — no filters that distort the mark",
+      "technology": "SVG image",
+      "params": {
+        "filter_pipeline": [],
+        "hover_transform": "none",
+        "reveal_animation": "none",
+        "distortion_type": "none"
+      }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": false,
+      "style": "none",
+      "params": {
+        "blur_radius": "0",
+        "transparency": "0",
+        "border_treatment": "hairline only if terminal panel",
+        "shadow_type": "none",
+        "light_source_angle": "n/a"
+      }
+    },
+    "canvas_drawings": {
+      "enabled": false,
+      "type": "none",
+      "description": "SVG only for Discord Studio path",
+      "technology": "SVG",
+      "params": {
+        "draw_method": "none",
+        "animation_loop": false,
+        "color_scheme": "brand",
+        "responsiveness": "fixed 1024",
+        "interaction": "none"
+      }
+    },
+    "svg_animations": {
+      "enabled": false,
+      "type": "none",
+      "description": "Static export for Discord attach",
+      "params": {
+        "animation_method": "none",
+        "path_morphing": false,
+        "stroke_animation": false,
+        "filter_effects": "optional grain"
+      }
+    },
+    "composite_notes": "ALWAYS embed official logos via <!--GRAPHIFY_LOGO_PRIMARY--> slots — never redraw the graph-G. Prefer asymmetric editorial compositions. Ban purple meshes, centered AI milestone templates, fake hexagon-G badges, Inter personality, heavy shadows."
+  }
+}

@@ -3,7 +3,19 @@ const path = require('path');
 const config = require('./config');
 
 const BRAND_PATH = path.join(__dirname, 'brand', 'announce-image.md');
+const DNA_PATH = path.join(__dirname, 'brand', 'graphify-design-dna.json');
 const LOGO_ROOT = path.join(__dirname, 'brand', 'logos');
+
+const DNA_QUALITY_CHECKS = `
+## Design DNA quality checks (zanwei/design-dna generation guide)
+- Every color traces to DNA palette (cream/ink/hero greens/amber/verify — no purple)
+- Type: tight grotesque display + mono overlines; not Inter/Roboto personality
+- Spacing: macro whitespace; asymmetric balance
+- Elevation: no drop shadows — depth from gradient/grain only
+- Mood matches DNA: restrained, confident, quietly technical
+- Logos: official PNG slots only (never redraw graph-G)
+- Effects: lightweight SVG grain/gradient only; no glassmorphism / particle soup
+`;
 
 const LOGO_FILES = {
   icon: { white: 'icons/white-no_bg.png', black: 'icons/black-no_bg.png' },
@@ -17,6 +29,24 @@ function loadBrandDoc() {
   } catch {
     return 'Graphify terminal-luxury. Official logos only from brand/logos. Never invent a G mark.';
   }
+}
+
+function loadDesignDna() {
+  try {
+    return JSON.parse(fs.readFileSync(DNA_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function dnaPromptBlock() {
+  const dna = loadDesignDna();
+  if (!dna) return '';
+  // Compact but complete — full DNA JSON so Claude follows tokens + style + effects.
+  return `
+## Graphify Design DNA (zanwei/design-dna profile — FOLLOW THIS)
+${JSON.stringify(dna, null, 2)}
+${DNA_QUALITY_CHECKS}`;
 }
 
 function logoTone(treatment) {
@@ -220,10 +250,13 @@ You will SEE the official logo PNGs in the user message — memorize them. Never
 Output ONLY valid JSON.`;
 
   const user = `${brand}
+${dnaPromptBlock()}
 
 ## Official logo images attached
 Image 1 = icon (graph-G wireframe mark). Image 2 = full lockup (mark + wordmark).
 These are the ONLY acceptable brand marks. Pick icon | wordmark | full for slots — the server embeds the real PNG files.
+
+Apply DNA priority: color & type first, then spacing/layout, then style mood, then lightweight SVG effects only.
 
 ## Announcement signal
 Type: ${signal.type}
@@ -298,6 +331,7 @@ HARD RULES:
 5. Exact hex colors from the brief. No purple.`;
 
   const user = `${brand}
+${dnaPromptBlock()}
 
 Signal: ${signal.type} — ${signal.title}
 

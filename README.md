@@ -43,7 +43,7 @@ Open the site:
 
 - **Releases** → **Check latest release** (or Combine 2–4) → Copy into `#production-releases`.
 - **Announcements** → **Check for news** → pick a signal → **Draft announcement** → Copy into `#announcements`.
-- Optional checkbox **Create image too** — Claude brainstorms a Graphify-branded brief (from `DESIGN.md` / `brand/announce-image.md`), then renders an SVG poster. With `OPENAI_API_KEY`, `auto` engine also tries a photoreal/raster PNG. Download attaches to Discord yourself (never auto-posts).
+- Optional checkbox **Create image too** — Claude brainstorms from Graphify **Design DNA** (`brand/graphify-design-dna.json`, zanwei schema) + `brand/announce-image.md`, renders SVG atmosphere/type, then **injects official logo PNGs** from `brand/logos/` (never redraws the mark). Download for Discord yourself (never auto-posts).
 
 Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key). Image generation requires Claude.
 
