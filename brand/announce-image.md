@@ -14,28 +14,13 @@ Agency craft bar: one signature, macro whitespace, intentional asymmetry. Not a 
 - Hero greens `#062a22 → #0a3f31 → #124f3c → #1e6149 → #4f8a68 → #a8c9ad → cream`
 - Footer / near-black green `#052019`
 
-## Official logos ONLY (hard rule)
+## Official logos + layout (hard rule)
 
-The runtime **embeds PNG brand assets** from `brand/logos/`. You must **never draw**:
+Claude supplies **mood + short copy only**. The server (`lib/poster-svg.js`) composes the SVG:
 
-- A letter G, hexagon-G, serif-G, node-cluster pretending to be the mark
-- A fake “GRAPHIFY” wordmark made of SVG text paths meant to look like the logo
-- Any substitute mark
-
-Choose among real assets:
-
-| Key | Asset |
-|-----|--------|
-| `icon` | Wireframe graph-G mark (`icons/*`) |
-| `wordmark` | Graphify wordmark (`wordmark/*`) |
-| `full` | Mark + wordmark lockup (`full/*`) |
-
-Tone: `white-on-dark` → white transparent PNGs · `ink-on-cream` → black transparent PNGs.
-
-In the SVG, place **only** these HTML comments (the server replaces them with real `<image>` tags):
-
-- `<!--GRAPHIFY_LOGO_PRIMARY-->`
-- `<!--GRAPHIFY_LOGO_SECONDARY-->` (optional)
+- Official PNGs from `brand/logos` / `logo-assets.js` (icon + full lockup)
+- Fixed non-overlapping zones (number posters never put a paragraph beside the hero numeral)
+- No freeform Claude SVG (that caused overlapping / hallucinated type)
 
 ## Mood picker
 

@@ -436,9 +436,9 @@ export default function AnnouncementsPanel() {
                 </div>
                 {createImage && (
                   <p className="na-note" style={{ marginTop: 10 }}>
-                    Claude art-directs atmosphere + type; official logo PNGs from{' '}
-                    <code>brand/logos</code> are injected (never redrawn). Download PNG for Discord.
-                    Needs <code>ANTHROPIC_API_KEY</code>.
+                    Claude picks mood + short copy only; the server composes a fixed layout with
+                    official logos (no freeform SVG). Download PNG for Discord. Needs{' '}
+                    <code>ANTHROPIC_API_KEY</code>.
                   </p>
                 )}
               </div>

@@ -19,6 +19,8 @@ const nextConfig = {
       './brand/graphify-design-dna.json',
       './brand/design-dna/**/*',
       './lib/canon.js',
+      './lib/logo-assets.js',
+      './lib/poster-svg.js',
     ],
   },
 };
