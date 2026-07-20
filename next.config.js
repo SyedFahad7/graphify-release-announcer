@@ -12,7 +12,9 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/announcements': [
       './brand/logos/**/*',
+      './brand/logo-assets.js',
       './brand/announce-image.md',
+      './brand/announce-voice.md',
       './brand/graphify-design-dna.json',
       './brand/design-dna/**/*',
     ],
