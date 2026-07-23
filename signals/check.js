@@ -127,6 +127,7 @@ async function checkSignals({
           ok: exaInfo.ok,
           resultCount: exaInfo.resultCount || 0,
           signalCount: (exaInfo.signals || []).length,
+          searchCount: exaInfo.searchCount || 0,
           error: exaInfo.error || null,
           configured: Boolean(config.exaApiKey),
         }

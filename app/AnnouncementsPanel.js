@@ -30,6 +30,42 @@ const TYPE_LABEL = {
   manual: 'Manual',
 };
 
+function publishedIso(signal) {
+  return signal?.meta?.publishedAt || signal?.meta?.published_at || null;
+}
+
+/** Absolute date for queue/detail, e.g. Jul 20, 2026 */
+function formatPublished(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return null;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Relative age, e.g. today · 3d ago · 2w ago */
+function formatAge(iso, ageDays) {
+  const days =
+    typeof ageDays === 'number' && Number.isFinite(ageDays)
+      ? ageDays
+      : iso
+        ? (Date.now() - new Date(iso).getTime()) / 86400000
+        : null;
+  if (days == null || !Number.isFinite(days)) return null;
+  if (days < 0.5) return 'today';
+  if (days < 1.5) return '1d ago';
+  if (days < 14) return `${Math.round(days)}d ago`;
+  if (days < 60) return `${Math.round(days / 7)}w ago`;
+  return `${Math.round(days / 30)}mo ago`;
+}
+
+function newsWhenLabel(signal) {
+  const iso = publishedIso(signal);
+  const abs = formatPublished(iso);
+  const rel = formatAge(iso, signal?.meta?.ageDays);
+  if (abs && rel) return `${abs} · ${rel}`;
+  return abs || rel || 'date unknown';
+}
+
 /** Vercel sometimes returns plain text ("A server error…") instead of JSON. */
 async function readApiJson(res) {
   const raw = await res.text();
@@ -385,12 +421,16 @@ export default function AnnouncementsPanel() {
           {check.exa
             ? check.exa.configured === false
               ? 'Exa not configured (set EXA_API_KEY)'
-              : `Exa ${check.exa.signalCount || 0} hits`
+              : `Exa ${check.exa.signalCount || 0} hits${
+                  check.exa.searchCount ? ` · ${check.exa.searchCount} deep passes` : ''
+                }`
             : 'Exa skipped'}
           {' · '}
           {check.rss
             ? `RSS ${check.rss.signalCount || 0} from ${check.rss.feedCount || 0} feeds`
             : 'RSS skipped'}
+          {' · '}
+          freshest first (≤21d)
         </div>
       )}
 
@@ -420,6 +460,9 @@ export default function AnnouncementsPanel() {
             >
               <div className="tag">{TYPE_LABEL[s.type] || s.type}</div>
               <div className="meta">{s.title}</div>
+              {s.type === 'news' && (
+                <div className="meta signal-when">{newsWhenLabel(s)}</div>
+              )}
             </button>
           ))}
         </aside>
@@ -439,10 +482,32 @@ export default function AnnouncementsPanel() {
                   <span className="pill pre">{TYPE_LABEL[activeSignal.type] || activeSignal.type}</span>
                 </div>
                 <p className="signal-summary">{activeSignal.summary}</p>
+                {activeSignal.type === 'news' && (
+                  <div className="signal-meta-row">
+                    <span className="pill pre">{newsWhenLabel(activeSignal)}</span>
+                    {activeSignal.meta?.source && (
+                      <span className="pill pre">via {activeSignal.meta.source}</span>
+                    )}
+                  </div>
+                )}
                 {activeSignal.url && (
-                  <a href={activeSignal.url} target="_blank" rel="noreferrer">
-                    Open source ↗
-                  </a>
+                  <div className="signal-link-block">
+                    <a
+                      className="signal-link"
+                      href={activeSignal.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {activeSignal.type === 'news'
+                        ? 'Open article ↗'
+                        : activeSignal.type === 'tweet'
+                          ? 'Open on X ↗'
+                          : 'Open source ↗'}
+                    </a>
+                    <div className="signal-url" title={activeSignal.url}>
+                      {activeSignal.url.replace(/^https?:\/\//, '')}
+                    </div>
+                  </div>
                 )}
                 <div className="chunk-actions" style={{ marginTop: 12 }}>
                   <button

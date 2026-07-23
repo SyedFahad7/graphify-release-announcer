@@ -81,7 +81,11 @@ const config = {
 
   // Live web coverage (Exa) + RSS (Google News / HN / custom).
   exaApiKey: process.env.EXA_API_KEY || '',
-  exaNumResults: int(process.env.EXA_NUM_RESULTS, 8),
+  // Per-query floor; deep multi-pass defaults go higher inside signals/exa.js
+  exaNumResults: int(process.env.EXA_NUM_RESULTS, 12),
+  // auto | fast | deep-lite | deep — used when EXA_QUERIES overrides defaults
+  exaSearchType: (process.env.EXA_SEARCH_TYPE || 'deep-lite').toLowerCase(),
+  exaDaysLookback: int(process.env.EXA_DAYS_LOOKBACK, 21),
   exaQueries: (process.env.EXA_QUERIES || '')
     .split('|')
     .map((s) => s.trim())
@@ -91,6 +95,8 @@ const config = {
     .map((s) => s.trim())
     .filter(Boolean),
   rssMaxPerFeed: int(process.env.ANNOUNCE_RSS_MAX_PER_FEED, 12),
+  // Drop RSS items older than this (keeps the queue feeling "today")
+  rssMaxAgeDays: int(process.env.ANNOUNCE_RSS_MAX_AGE_DAYS, 21),
 };
 
 module.exports = config;

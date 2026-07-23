@@ -70,7 +70,8 @@ Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic 
 |----------|-----|
 | `ANTHROPIC_API_KEY` | Claude wording for releases + announcements + image art direction / SVG |
 | `TWITTER_BEARER_TOKEN` | Same token as `graphify-social-bot` / `graphify-tweet-agent` (X read) |
-| `EXA_API_KEY` | Live Exa web/news search for press + blogs (dashboard.exa.ai) |
+| `EXA_API_KEY` | Live Exa multi-pass search (news + blogs + deep) for press (dashboard.exa.ai) |
+| `EXA_DAYS_LOOKBACK` | Optional; default 21 — drop older hits |
 | `ANNOUNCE_RSS_FEEDS` | Optional; defaults to Google News + HN Graphify feeds (no key) |
 | `GITHUB_TOKEN` | Higher GitHub rate limit for stars + releases |
 | `OPENAI_API_KEY` | Optional; only if you want raster PNG via `gpt-image-1.5` |

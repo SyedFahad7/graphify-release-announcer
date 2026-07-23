@@ -1,5 +1,5 @@
 const config = require('../config');
-const { looksLikeGraphify, normalizeUrl, isFirstPartyUrl } = require('./exa');
+const { looksLikeGraphify, normalizeUrl, isFirstPartyUrl, EXCLUDE_DOMAINS } = require('./exa');
 
 /**
  * Default feeds that surface Graphify / OSS AI tooling mentions.
@@ -53,26 +53,42 @@ function parseRssItems(xml) {
   return items;
 }
 
+function toIsoDate(pubDate) {
+  if (!pubDate) return null;
+  const d = new Date(pubDate);
+  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+}
+
 function itemToSignal(item, feedUrl) {
   const url = item.link;
   if (!url || isFirstPartyUrl(url)) return null;
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    if (EXCLUDE_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`))) return null;
+  } catch {
+    /* ignore */
+  }
+
   const blob = `${item.title} ${item.description} ${url}`;
-  // Keyword-scoped feeds already searched for Graphify; still require a hint in title/body when possible.
   const feedScoped = /graphify|graphifyy|news\.google\.com\/rss\/search|hnrss\.org/i.test(feedUrl);
   if (!looksLikeGraphify(blob) && !feedScoped) return null;
   if (!looksLikeGraphify(blob) && feedScoped && !/graphify|graphifyy|shamsi/i.test(blob)) {
-    // Drop obvious noise from broad HN keyword collisions
     if (/hnrss\.org/i.test(feedUrl)) return null;
   }
 
-  let score = 68;
-  if (item.pubDate) {
-    const ageDays = (Date.now() - new Date(item.pubDate).getTime()) / 86400000;
-    if (Number.isFinite(ageDays)) {
-      if (ageDays < 2) score = 86;
-      else if (ageDays < 10) score = 76;
-      else if (ageDays > 45) score = 50;
-    }
+  const publishedAt = toIsoDate(item.pubDate);
+  let age = null;
+  let score = 58;
+  if (publishedAt) {
+    age = (Date.now() - new Date(publishedAt).getTime()) / 86400000;
+    if (!Number.isFinite(age)) age = null;
+    else if (age > config.rssMaxAgeDays) return null;
+    else if (age < 1) score = 94;
+    else if (age < 3) score = 88;
+    else if (age < 7) score = 80;
+    else if (age < 14) score = 72;
+    else if (age < 21) score = 64;
+    else score = 52;
   }
 
   let host = 'rss';
@@ -87,15 +103,16 @@ function itemToSignal(item, feedUrl) {
   return {
     id: `news:rss:${Buffer.from(url).toString('base64url').slice(0, 48)}`,
     type: 'news',
-    title: `${host}: ${item.title || 'Mention'}`.slice(0, 120),
+    title: `${host}: ${item.title || 'Mention'}`.slice(0, 140),
     summary: (item.description || item.title || '').slice(0, 500),
     url,
     score,
     meta: {
       source: 'rss',
       feed: feedUrl,
-      publishedAt: item.pubDate || null,
+      publishedAt,
       host,
+      ageDays: age != null ? Math.round(age * 10) / 10 : null,
     },
   };
 }
