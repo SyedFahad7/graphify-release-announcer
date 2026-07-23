@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AnnouncementsPanel from './AnnouncementsPanel';
 import RedditPanel from './RedditPanel';
 
@@ -22,6 +22,14 @@ function fmtDate(d) {
 
 export default function Page() {
   const [studio, setStudio] = useState('releases'); // 'releases' | 'announcements' | 'reddit'
+  // Keep each tab's React state alive after first visit (hidden, not unmounted).
+  // Full page refresh clears everything — intentional.
+  const [visited, setVisited] = useState({
+    releases: true,
+    announcements: false,
+    reddit: false,
+  });
+  const releasesBootstrapped = useRef(false);
   const [releases, setReleases] = useState([]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -100,7 +108,17 @@ export default function Page() {
   }, [selected, noLlm]);
 
   useEffect(() => {
+    setVisited((prev) => (prev[studio] ? prev : { ...prev, [studio]: true }));
+  }, [studio]);
+
+  // Bootstrap Releases once per page load — never re-burn Claude when switching tabs.
+  useEffect(() => {
     if (studio !== 'releases') return;
+    if (releasesBootstrapped.current) {
+      loadList(); // refresh sidebar list only
+      return;
+    }
+    releasesBootstrapped.current = true;
     loadList();
     generate(null);
   }, [studio, loadList, generate]);
@@ -168,11 +186,31 @@ export default function Page() {
         </button>
       </div>
 
-      {studio === 'announcements' && <AnnouncementsPanel />}
-      {studio === 'reddit' && <RedditPanel />}
+      {visited.announcements && (
+        <div
+          className="studio-panel"
+          hidden={studio !== 'announcements'}
+          aria-hidden={studio !== 'announcements'}
+        >
+          <AnnouncementsPanel />
+        </div>
+      )}
+      {visited.reddit && (
+        <div
+          className="studio-panel"
+          hidden={studio !== 'reddit'}
+          aria-hidden={studio !== 'reddit'}
+        >
+          <RedditPanel />
+        </div>
+      )}
 
-      {studio === 'releases' && (
-        <>
+      {visited.releases && (
+        <div
+          className="studio-panel"
+          hidden={studio !== 'releases'}
+          aria-hidden={studio !== 'releases'}
+        >
       <div className="mode-tabs">
         <button
           className={`mode-tab ${mode === 'single' ? 'active' : ''}`}
@@ -417,7 +455,7 @@ export default function Page() {
           )}
         </main>
       </div>
-        </>
+        </div>
       )}
     </div>
   );

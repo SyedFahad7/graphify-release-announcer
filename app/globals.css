@@ -85,6 +85,10 @@ a:hover { text-decoration: underline; }
   color: #fff;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
 }
+/* Keep inactive studio tabs mounted (state preserved); only hide visually. */
+.studio-panel[hidden] {
+  display: none !important;
+}
 .studio-lead {
   color: var(--muted);
   line-height: 1.5;
