@@ -1,11 +1,13 @@
 # graphify-release-announcer (Discord Studio)
 
-Your **personal Discord draft studio** for Graphify. Two surfaces on one Vercel site:
+Your **personal draft studio** for Graphify. Three surfaces on one Vercel site:
 
 1. **Releases** — Coolify-style `#production-releases` posts (single tag or combine 2–4).
 2. **Announcements** — `#announcements` drafts from Safi’s X, `@graphify`, star milestones
    (80k / 90k / 100k), latest release teaser, **Exa** live web/news search, and **RSS**
    (Google News + HN by default). Compose from a tweet / release / article URL too.
+3. **Reddit** — paste-only community posts grounded on the same signals + `brand/reddit`
+   (human voice, low promo, subreddit promo policies). Never auto-posts to Reddit.
 
 **It does not post anything on its own.** You copy and paste.
 
@@ -44,7 +46,8 @@ Open the site:
 
 - **Releases** → **Check latest release** (or Combine 2–4) → Copy into `#production-releases`.
 - **Announcements** → **Check for news** → pick a signal → **Draft announcement** → Copy into `#announcements`.
-- Optional checkbox **Create image too** — Claude brainstorms from Graphify **Design DNA** (`brand/graphify-design-dna.json`, zanwei schema) + `brand/announce-image.md`, renders SVG atmosphere/type, then **injects official logo PNGs** from `brand/logos/` (never redraws the mark). Download for Discord yourself (never auto-posts).
+- **Reddit** → **Gather context** → pick subreddit + angle + subtlety → **Draft Reddit post** → Copy title / body into Reddit yourself.
+- Optional checkbox **Create image too** (Announcements) — Claude brainstorms from Graphify **Design DNA** (`brand/graphify-design-dna.json`, zanwei schema) + `brand/announce-image.md`, renders SVG atmosphere/type, then **injects official logo PNGs** from `brand/logos/` (never redraws the mark). Download for Discord yourself (never auto-posts).
 
 ### Announcement canon (product memory)
 
@@ -57,6 +60,17 @@ Drafts + images load a small shipped canon pack — not RAG:
 | `brand/canon/lessons.json` | Append-only corrections when Claude slips |
 
 Runtime: [`lib/canon.js`](lib/canon.js) computes project age from `firstPublicAt`, injects into Claude, then `validateAnnouncement` strips hard-sell / fake timelines. New truth → edit JSON/MD → push. Optionally mirror into workspace `MEMORY.md`.
+
+### Reddit pack
+
+| File | Purpose |
+|------|---------|
+| `brand/reddit/voice.md` | Length, register, subtlety ladder |
+| `brand/reddit/bans.md` | Claude-isms / hard-sell / Discord leakage |
+| `brand/reddit/formulas.md` | Angles (builder, milestone, discussion, …) |
+| `brand/reddit/subs.json` | Curated subs + `open` / `careful` / `megathread` policy |
+
+API: `/api/reddit` (`mode=meta|context|draft`). Cursor chat skills live in the workspace under `.cursor/skills/reddit-*`.
 
 Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic key). Image generation requires Claude.
 

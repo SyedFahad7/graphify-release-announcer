@@ -22,6 +22,12 @@ const nextConfig = {
       './lib/logo-assets.js',
       './lib/poster-svg.js',
     ],
+    '/api/reddit': [
+      './brand/canon/**/*',
+      './brand/reddit/**/*',
+      './lib/canon.js',
+      './lib/reddit-pack.js',
+    ],
   },
 };
 

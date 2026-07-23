@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ClaudeAI",
+    "label": "r/ClaudeAI",
+    "promoPolicy": "careful",
+    "defaultAngle": "builder_story",
+    "flairHint": "Showcase or Discussion if available",
+    "rulesNote": "Self-promo often restricted; prefer useful builder story or weekly megathread. Check sticky rules before posting."
+  },
+  {
+    "id": "cursor",
+    "label": "r/cursor",
+    "promoPolicy": "careful",
+    "defaultAngle": "builder_story",
+    "flairHint": "Discussion / Tips",
+    "rulesNote": "Lead with Cursor workflow pain. Tool mention must feel like a tip, not an ad."
+  },
+  {
+    "id": "LocalLLaMA",
+    "label": "r/LocalLLaMA",
+    "promoPolicy": "careful",
+    "defaultAngle": "honest_review_seed",
+    "flairHint": "Discussion",
+    "rulesNote": "Local-first angle wins. Stress tree-sitter / on-device code graph; avoid SaaS pitch."
+  },
+  {
+    "id": "SideProject",
+    "label": "r/SideProject",
+    "promoPolicy": "open",
+    "defaultAngle": "builder_story",
+    "flairHint": "Show and Tell",
+    "rulesNote": "I-built format OK. Keep under 200 words; one demo beat."
+  },
+  {
+    "id": "selfhosted",
+    "label": "r/selfhosted",
+    "promoPolicy": "careful",
+    "defaultAngle": "builder_story",
+    "flairHint": "Software Release or Guide",
+    "rulesNote": "On-device / no telemetry angle. Skip enterprise upsell."
+  },
+  {
+    "id": "MachineLearning",
+    "label": "r/MachineLearning",
+    "promoPolicy": "megathread",
+    "defaultAngle": "discussion",
+    "flairHint": "Discussion",
+    "rulesNote": "Hostile to product posts. Prefer research-ish discussion or megathread comment."
+  },
+  {
+    "id": "programming",
+    "label": "r/programming",
+    "promoPolicy": "megathread",
+    "defaultAngle": "discussion",
+    "flairHint": null,
+    "rulesNote": "Link posts / discussion culture; self-promo rarely survives. Prefer article link + honest take, or skip."
+  },
+  {
+    "id": "ChatGPTCoding",
+    "label": "r/ChatGPTCoding",
+    "promoPolicy": "careful",
+    "defaultAngle": "builder_story",
+    "flairHint": "Tools / Discussion",
+    "rulesNote": "Coding-assistant audience. Concrete workflow > marketing."
+  },
+  {
+    "id": "devops",
+    "label": "r/devops",
+    "promoPolicy": "careful",
+    "defaultAngle": "discussion",
+    "flairHint": "Discussion",
+    "rulesNote": "Incident/knowledge-graph or monorepo context angles work better than star counts."
+  },
+  {
+    "id": "opensource",
+    "label": "r/opensource",
+    "promoPolicy": "open",
+    "defaultAngle": "milestone",
+    "flairHint": "Promotional (if required) or Discussion",
+    "rulesNote": "Milestone + MIT / local-first story OK. Still no star begging."
+  },
+  {
+    "id": "IndieHackers",
+    "label": "r/IndieHackers",
+    "promoPolicy": "open",
+    "defaultAngle": "builder_story",
+    "flairHint": "Milestone / Sharing",
+    "rulesNote": "Founder voice OK. Honest numbers from grounding only."
+  },
+  {
+    "id": "ExperiencedDevs",
+    "label": "r/ExperiencedDevs",
+    "promoPolicy": "megathread",
+    "defaultAngle": "discussion",
+    "flairHint": "Discussion",
+    "rulesNote": "Skeptical crowd. Discussion about context/memory for agents; soft or no product push."
+  }
+]

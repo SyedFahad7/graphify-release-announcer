@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import AnnouncementsPanel from './AnnouncementsPanel';
+import RedditPanel from './RedditPanel';
 
 const MAX_COMBINE = 4;
 const MIN_COMBINE = 2;
@@ -20,7 +21,7 @@ function fmtDate(d) {
 }
 
 export default function Page() {
-  const [studio, setStudio] = useState('releases'); // 'releases' | 'announcements'
+  const [studio, setStudio] = useState('releases'); // 'releases' | 'announcements' | 'reddit'
   const [releases, setReleases] = useState([]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -136,10 +137,11 @@ export default function Page() {
     <div className="wrap">
       <div className="hero">
         <div>
-          <h1>Graphify Discord Studio</h1>
+          <h1>Graphify Studio</h1>
           <p>
-            Draft ready-to-paste posts for <strong>#production-releases</strong> and{' '}
-            <strong>#announcements</strong>. Nothing is posted automatically; you copy and paste.
+            Draft ready-to-paste posts for <strong>#production-releases</strong>,{' '}
+            <strong>#announcements</strong>, and <strong>Reddit</strong>. Nothing is posted
+            automatically; you copy and paste.
           </p>
         </div>
         <div className="repo-badge">Graphify-Labs/graphify</div>
@@ -158,9 +160,16 @@ export default function Page() {
         >
           Announcements
         </button>
+        <button
+          className={`studio-tab ${studio === 'reddit' ? 'active' : ''}`}
+          onClick={() => setStudio('reddit')}
+        >
+          Reddit
+        </button>
       </div>
 
       {studio === 'announcements' && <AnnouncementsPanel />}
+      {studio === 'reddit' && <RedditPanel />}
 
       {studio === 'releases' && (
         <>

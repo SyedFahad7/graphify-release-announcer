@@ -1,9 +1,9 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Graphify Discord Studio',
+  title: 'Graphify Studio',
   description:
-    'Draft ready-to-paste Discord posts for #production-releases and #announcements.',
+    'Draft ready-to-paste Discord (#production-releases, #announcements) and Reddit posts. Nothing auto-posts.',
 };
 
 export default function RootLayout({ children }) {
