@@ -46,4 +46,12 @@ async function postAnnouncement(text) {
   return chunks.length;
 }
 
-module.exports = { postAnnouncement };
+/** Turn the copy-paste mention into a real role ping when a role id is set. */
+function preparePostText(text) {
+  if (!text) return text;
+  if (text.includes('<@&')) return text;
+  if (!config.roleId) return text;
+  return text.replace(`@${config.roleName}`, `<@&${config.roleId}>`);
+}
+
+module.exports = { postAnnouncement, preparePostText };

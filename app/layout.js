@@ -3,7 +3,7 @@ import './globals.css';
 export const metadata = {
   title: 'Graphify Studio',
   description:
-    'Draft ready-to-paste Discord (#production-releases, #announcements) and Reddit posts. Nothing auto-posts.',
+    'Draft Graphify release posts and send them to Discord after you click Send. Announcements and Reddit stay copy-paste.',
 };
 
 export default function RootLayout({ children }) {

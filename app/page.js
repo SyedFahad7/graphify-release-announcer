@@ -42,6 +42,50 @@ export default function Page() {
   const [chunkIdx, setChunkIdx] = useState(0); // next Discord part to copy
   const [mode, setMode] = useState('single'); // 'single' | 'combine'
   const [selected, setSelected] = useState([]); // tags for combine
+  const [pending, setPending] = useState([]);
+  const [sending, setSending] = useState(false);
+  const [sendNote, setSendNote] = useState('');
+
+  const showQueued = useCallback((item) => {
+    setData({
+      release: {
+        tag: item.tag,
+        name: item.name || item.tag,
+        url: item.url,
+        publishedAt: item.published_at,
+        prerelease: false,
+      },
+      source: item.source || 'llm',
+      fromQueue: true,
+      posts: [
+        {
+          key: 'production',
+          label: 'Production Releases',
+          channel: '#production-releases',
+          applicable: true,
+          text: item.paste_text,
+          length: item.length,
+          chunks: item.chunks,
+        },
+      ],
+    });
+    setActiveTag(item.tag);
+    setActiveTab('production');
+    setChunkIdx(0);
+  }, []);
+
+  const loadQueue = useCallback(async () => {
+    try {
+      const res = await fetch('/api/releases');
+      const json = await res.json();
+      const items = json.pending || [];
+      setPending(items);
+      return items;
+    } catch {
+      setPending([]);
+      return [];
+    }
+  }, []);
 
   const loadList = useCallback(async () => {
     try {
@@ -120,8 +164,54 @@ export default function Page() {
     }
     releasesBootstrapped.current = true;
     loadList();
-    generate(null);
-  }, [studio, loadList, generate]);
+    loadQueue().then((items) => {
+      if (items[0]) showQueued(items[0]);
+      else generate(null);
+    });
+  }, [studio, loadList, generate, loadQueue, showQueued]);
+
+  const decide = async (action) => {
+    const tag = data?.release?.tag;
+    const post = data?.posts?.find((p) => p.key === 'production');
+    if (!tag || !post) return;
+    if (action === 'send') {
+      const ok = window.confirm(
+        `Send ${tag} to #production-releases? This pings @Production Releases.`
+      );
+      if (!ok) return;
+    }
+    setSending(true);
+    setError('');
+    setSendNote('');
+    try {
+      const res = await fetch('/api/releases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          tag,
+          text: data.fromQueue ? undefined : post.text,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || 'Send failed');
+      if (action === 'skip') {
+        setSendNote(`${tag} skipped. It will not be queued again.`);
+      } else {
+        setSendNote(
+          json.messages > 1
+            ? `Sent ${tag} as ${json.messages} Discord messages.`
+            : `Sent ${tag} to #production-releases.`
+        );
+      }
+      const items = await loadQueue();
+      if (items[0]) showQueued(items[0]);
+    } catch (e) {
+      setError(e.message || 'Something went wrong');
+    } finally {
+      setSending(false);
+    }
+  };
 
   const copy = async (key, text) => {
     try {
@@ -157,9 +247,8 @@ export default function Page() {
         <div>
           <h1>Graphify Studio</h1>
           <p>
-            Draft ready-to-paste posts for <strong>#production-releases</strong>,{' '}
-            <strong>#announcements</strong>, and <strong>Reddit</strong>. Nothing is posted
-            automatically; you copy and paste.
+            Release posts are drafted twice a day. Nothing goes to Discord until you click{' '}
+            <strong>Send</strong>. Announcements and Reddit stay copy-paste.
           </p>
         </div>
         <div className="repo-badge">Graphify-Labs/graphify</div>
@@ -211,6 +300,31 @@ export default function Page() {
           hidden={studio !== 'releases'}
           aria-hidden={studio !== 'releases'}
         >
+      {pending.length > 0 && (
+        <div className="approval">
+          <div>
+            <strong>
+              {pending.length === 1
+                ? `${pending[0].tag} is waiting for your OK`
+                : `${pending.length} releases are waiting for your OK`}
+            </strong>
+            <p>
+              The check already wrote the #production-releases post. Send posts it. Skip leaves
+              Discord alone.
+            </p>
+          </div>
+          <div className="approval-actions">
+            <button className="btn" disabled={sending} onClick={() => decide('skip')}>
+              Skip
+            </button>
+            <button className="btn primary" disabled={sending} onClick={() => decide('send')}>
+              {sending ? 'Sending…' : 'Send to Discord'}
+            </button>
+          </div>
+        </div>
+      )}
+      {sendNote && <div className="send-note">{sendNote}</div>}
+
       <div className="mode-tabs">
         <button
           className={`mode-tab ${mode === 'single' ? 'active' : ''}`}
@@ -389,21 +503,43 @@ export default function Page() {
                             ) : null}
                           </span>
                           {needsSplit ? (
-                            <button
-                              className={`copy primary-copy ${copied === `${active.key}-${safeIdx}` ? 'done' : ''}`}
-                              onClick={() => copyDiscordPart(safeIdx)}
-                            >
-                              {copied === `${active.key}-${safeIdx}`
-                                ? `✓ Part ${safeIdx + 1} copied — paste in Discord`
-                                : `📋 Copy Discord part ${safeIdx + 1}/${parts.length}`}
-                            </button>
+                            <span className="post-actions">
+                              <button
+                                className={`copy primary-copy ${copied === `${active.key}-${safeIdx}` ? 'done' : ''}`}
+                                onClick={() => copyDiscordPart(safeIdx)}
+                              >
+                                {copied === `${active.key}-${safeIdx}`
+                                  ? `✓ Part ${safeIdx + 1} copied`
+                                  : `📋 Copy part ${safeIdx + 1}/${parts.length}`}
+                              </button>
+                              {active.key === 'production' && (
+                                <button
+                                  className="btn primary"
+                                  disabled={sending}
+                                  onClick={() => decide('send')}
+                                >
+                                  {sending ? 'Sending…' : 'Send to Discord'}
+                                </button>
+                              )}
+                            </span>
                           ) : (
-                            <button
-                              className={`copy primary-copy ${copied === active.key ? 'done' : ''}`}
-                              onClick={() => copy(active.key, active.text)}
-                            >
-                              {copied === active.key ? '✓ Copied' : '📋 Copy'}
-                            </button>
+                            <span className="post-actions">
+                              <button
+                                className={`copy ${copied === active.key ? 'done' : ''}`}
+                                onClick={() => copy(active.key, active.text)}
+                              >
+                                {copied === active.key ? '✓ Copied' : '📋 Copy'}
+                              </button>
+                              {active.key === 'production' && (
+                                <button
+                                  className="btn primary"
+                                  disabled={sending}
+                                  onClick={() => decide('send')}
+                                >
+                                  {sending ? 'Sending…' : 'Send to Discord'}
+                                </button>
+                              )}
+                            </span>
                           )}
                         </div>
 

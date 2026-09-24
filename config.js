@@ -97,6 +97,10 @@ const config = {
   rssMaxPerFeed: int(process.env.ANNOUNCE_RSS_MAX_PER_FEED, 12),
   // Drop RSS items older than this (keeps the queue feeling "today")
   rssMaxAgeDays: int(process.env.ANNOUNCE_RSS_MAX_AGE_DAYS, 21),
+
+  // Approval queue for the Vercel "Send to Discord" button. Same project as the stats bot.
+  supabaseUrl: (process.env.SUPABASE_URL || '').replace(/\/$/, ''),
+  supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 };
 
 module.exports = config;

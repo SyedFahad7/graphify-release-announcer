@@ -62,6 +62,7 @@ a:hover { text-decoration: underline; }
 
 .studio-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 22px;
   padding: 4px;
@@ -434,4 +435,35 @@ pre.msg {
 .canon-hint code {
   font-size: 11px;
   color: var(--text);
+}
+
+.approval {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid rgba(0, 196, 140, 0.45);
+  background: rgba(0, 196, 140, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 0 16px;
+}
+.approval p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.approval-actions, .post-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.send-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 196, 140, 0.35);
+  color: var(--text);
+  font-size: 14px;
 }

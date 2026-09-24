@@ -9,7 +9,10 @@ Your **personal draft studio** for Graphify. Three surfaces on one Vercel site:
 3. **Reddit** — paste-only community posts grounded on the same signals + `brand/reddit`
    (human voice, low promo, subreddit promo policies). Never auto-posts to Reddit.
 
-**It does not post anything on its own.** You copy and paste.
+**Release posts wait for you.** A check runs twice a day (09:00 and 21:00 IST). If a new GitHub release exists, the draft shows on this site. Discord gets it only after you click **Send**. Announcements and Reddit stay copy-paste.
+
+> Community **videos/articles** for `#resources` live in the separate site
+> `graphify-resources-studio/` (fetch → draft → Trigger).
 
 CLI still covers the release tracker (`generate`, `list`, `track`, `combine`, `--copy`).
 
@@ -88,6 +91,11 @@ Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic 
 | `EXA_DAYS_LOOKBACK` | Optional; default 21 — drop older hits |
 | `ANNOUNCE_RSS_FEEDS` | Optional; defaults to Google News + HN Graphify feeds (no key) |
 | `GITHUB_TOKEN` | Higher GitHub rate limit for stars + releases |
+| `DISCORD_TOKEN` | Bot that posts #production-releases after you click Send |
+| `PRODUCTION_RELEASES_CHANNEL_ID` | Discord channel the bot posts into |
+| `PRODUCTION_RELEASES_ROLE_ID` | `@Production Releases` role so the ping is real |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Stores the approval queue. Run `supabase/migrations/002_release_drafts.sql` |
+| `CRON_SECRET` | Locks the twice-daily check. Vercel sends it on cron requests |
 | `OPENAI_API_KEY` | Optional; only if you want raster PNG via `gpt-image-1.5` |
 | `ANNOUNCE_IMAGE_ENGINE` | Default `anthropic` (Claude SVG). `auto` / `openai` if you add OpenAI later |
 | `ANTHROPIC_IMAGE_MODEL` | Default = `ANTHROPIC_MODEL` / `claude-sonnet-4-6` |
@@ -159,13 +167,18 @@ release that's *already* out. Use `check` for a one-shot version (no loop).
 
 ---
 
-## Optional: let it post for you
+## Send a release to Discord
 
-If you'd rather it also post (still only when *you* run `post`), set these in `.env`:
-`DISCORD_TOKEN`, `PRODUCTION_RELEASES_CHANNEL_ID`, and `PRODUCTION_RELEASES_ROLE_ID` (the role to
-ping). Then `node index.js post v0.9.14`. Long messages are split into ≤2000-char chunks and
-`allowed_mentions` is locked so only the release role can ping (never `@everyone`). Leave these blank
-to keep it purely a generator.
+The post matches the #production-releases format you already paste (title, `@Production Releases`, highlights, bug fixes, note, install block, changelog link).
+
+1. Run `supabase/migrations/002_release_drafts.sql` in the Supabase SQL editor.
+2. On the Vercel project, set `DISCORD_TOKEN`, `PRODUCTION_RELEASES_CHANNEL_ID`, `PRODUCTION_RELEASES_ROLE_ID`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CRON_SECRET`.
+3. Cron hits `/api/releases/poll` at 09:00 and 21:00 IST. The first run only records the current release so old posts are not sent again.
+4. Open the site. A waiting release shows a **Send to Discord** button. Confirm, and the bot posts it. **Skip** drops it.
+
+The Discord bot needs **Send Messages** in that channel and permission to mention the Production Releases role. Long posts are split into Discord-sized messages. Only the first message pings the role.
+
+`node index.js post v0.9.14` still posts from the CLI with the same env vars.
 
 ## Config (`.env`, all optional)
 
