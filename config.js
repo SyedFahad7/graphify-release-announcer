@@ -20,7 +20,7 @@ const config = {
   // Override with RELEASE_EMOJI, or RELEASE_EMOJI_NAME + RELEASE_EMOJI_ID.
   releaseEmoji: (() => {
     if (process.env.RELEASE_EMOJI) return process.env.RELEASE_EMOJI;
-    const id = process.env.RELEASE_EMOJI_ID || '1526877858390081616';
+    const id = process.env.RELEASE_EMOJI_ID || '1553443572651393125';
     const name = process.env.RELEASE_EMOJI_NAME || 'graphify';
     return `<:${name}:${id}>`;
   })(),
