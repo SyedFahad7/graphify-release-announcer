@@ -3,8 +3,11 @@ const { fitOneDiscordMessage, BOT_MESSAGE_LIMIT } = require('./format');
 
 const API = 'https://discord.com/api/v10';
 
+// Discord message flag: do not unfurl link previews (the GitHub release card).
+const SUPPRESS_EMBEDS = 1 << 2;
+
 async function sendMessage(channelId, content, { allowRolePing }) {
-  const body = { content };
+  const body = { content, flags: SUPPRESS_EMBEDS };
   // Only allow the configured role to actually ping; suppress @everyone/user pings.
   body.allowed_mentions = allowRolePing && config.roleId
     ? { parse: [], roles: [config.roleId] }
