@@ -99,7 +99,7 @@ Toggle **Skip AI** to use templates / the built-in release parser (no Anthropic 
 | `OPENAI_API_KEY` | Optional; only if you want raster PNG via `gpt-image-1.5` |
 | `ANNOUNCE_IMAGE_ENGINE` | Default `anthropic` (Claude SVG). `auto` / `openai` if you add OpenAI later |
 | `ANTHROPIC_IMAGE_MODEL` | Default = `ANTHROPIC_MODEL` / `claude-sonnet-4-6` |
-| `DISCORD_NITRO=true` | Optional; 3900-char fit if your account has Nitro |
+| `DISCORD_CHAR_LIMIT` | Optional. Bots are capped at 2000, so the post is always one message |
 | `ANNOUNCE_HANDLES` | Default `safishamsii,graphify` |
 | `STAR_MILESTONES` | Default `80000,90000,100000` |
 | `ANNOUNCE_PING` | Default `@everyone` (or an opt-in role text) |

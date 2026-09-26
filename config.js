@@ -40,15 +40,16 @@ const config = {
 
   // 0 = show all items in a section (Coolify-style, full list). Set a number to cap.
   maxItemsPerSection: int(process.env.MAX_ITEMS_PER_SECTION, 0),
-  // Discord paste budget for ONE message (so it does not become a .txt file).
-  // Free accounts = 2000, Nitro = 4000. Coolify's big catch-up posts land ~3800
-  // because Peak posts with Nitro + short bullets. Set DISCORD_NITRO=true for 3900,
-  // or override with DISCORD_CHAR_LIMIT. 0 disables fitting.
+  // Discord bots can send 2000 characters, not the 4000 Nitro user limit.
+  // 0 disables fitting. Anything higher is capped so the bot posts one message.
   fitLimit: (() => {
+    const hard = 1990;
     if (process.env.DISCORD_CHAR_LIMIT !== undefined && process.env.DISCORD_CHAR_LIMIT !== '') {
-      return int(process.env.DISCORD_CHAR_LIMIT, 1990);
+      const n = int(process.env.DISCORD_CHAR_LIMIT, hard);
+      if (n === 0) return 0;
+      return Math.min(n, hard);
     }
-    return bool(process.env.DISCORD_NITRO, false) ? 3900 : 1990;
+    return hard;
   })(),
   // Clean, Coolify-style bullets: strip (#123) issue/PR refs and "thanks @x" credits,
   // keep lines short. Set CLEAN_STYLE=false for dev-detailed output (refs + credits kept).

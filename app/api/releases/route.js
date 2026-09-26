@@ -25,13 +25,6 @@ function withChunks(row) {
 }
 
 function discordBudget() {
-  const raw = process.env.DISCORD_CHAR_LIMIT;
-  if (raw !== undefined && raw !== '') {
-    const n = parseInt(raw, 10);
-    if (Number.isFinite(n) && n > 0) return Math.min(n, 4000);
-    if (n === 0) return 1990;
-  }
-  if (/^(1|true|yes|on)$/i.test(process.env.DISCORD_NITRO || '')) return 3900;
   return 1990;
 }
 

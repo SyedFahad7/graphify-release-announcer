@@ -1,5 +1,5 @@
 const config = require('./config');
-const { chunkForDiscord } = require('./format');
+const { fitOneDiscordMessage, BOT_MESSAGE_LIMIT } = require('./format');
 
 const API = 'https://discord.com/api/v10';
 
@@ -37,13 +37,9 @@ async function postAnnouncement(text) {
   if (!config.discordToken) throw new Error('DISCORD_TOKEN not set');
   if (!config.channelId) throw new Error('PRODUCTION_RELEASES_CHANNEL_ID not set');
 
-  const chunks = chunkForDiscord(text);
-  for (let i = 0; i < chunks.length; i++) {
-    // Only the first chunk carries the role ping.
-    await sendMessage(config.channelId, chunks[i], { allowRolePing: i === 0 });
-    if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 800));
-  }
-  return chunks.length;
+  const one = fitOneDiscordMessage(text, BOT_MESSAGE_LIMIT);
+  await sendMessage(config.channelId, one, { allowRolePing: true });
+  return 1;
 }
 
 /** Turn the copy-paste mention into a real role ping when a role id is set. */

@@ -12,6 +12,8 @@ const SECTION_META = {
 };
 
 const DISCORD_LIMIT = 2000;
+// Bot API content is hard-capped at 2000. Nitro's 4000 does not apply to bots.
+const BOT_MESSAGE_LIMIT = 1990;
 
 // Two hand-tuned presets modelled on the two Coolify #production-releases admins:
 //   peak   — big H1 title, "## Release Highlights" + stats subtext, bold emoji
@@ -222,6 +224,54 @@ function stripPings(text) {
     .trim();
 }
 
+function isProtectedBlock(block) {
+  return /install \/ upgrade/i.test(block) || /full release notes/i.test(block);
+}
+
+/**
+ * Shrink an already-rendered announcement until it fits one bot message.
+ * Drops the least important bullets first. Keeps the title, install block, and notes link.
+ */
+function fitOneDiscordMessage(text, limit = BOT_MESSAGE_LIMIT) {
+  if (!text || text.length <= limit) return text;
+
+  const blocks = text.split('\n\n');
+  let guard = 0;
+  while (blocks.join('\n\n').length > limit && guard++ < 800) {
+    let removed = false;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      if (!blocks[i] || isProtectedBlock(blocks[i]) || blocks[i].startsWith('# ')) continue;
+      const lines = blocks[i].split('\n');
+      let bullet = -1;
+      for (let l = lines.length - 1; l >= 0; l--) {
+        if (/^\s*[-*] /.test(lines[l])) {
+          bullet = l;
+          break;
+        }
+      }
+      if (bullet === -1) continue;
+      lines.splice(bullet, 1);
+      const rest = lines.join('\n').trim();
+      blocks[i] = /^\s*[-*] /m.test(rest) ? rest : '';
+      removed = true;
+      break;
+    }
+    if (!removed) {
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        if (!blocks[i] || isProtectedBlock(blocks[i]) || blocks[i].startsWith('# ')) continue;
+        blocks[i] = '';
+        removed = true;
+        break;
+      }
+    }
+    if (!removed) break;
+  }
+
+  let out = blocks.filter(Boolean).join('\n\n').trim();
+  if (out.length > limit) out = out.slice(0, limit).trimEnd();
+  return out;
+}
+
 /**
  * Split a long announcement into Discord-sized chunks on paragraph boundaries.
  * Only the first chunk keeps the @role ping so you never double-notify.
@@ -262,6 +312,8 @@ module.exports = {
   buildAnnouncement,
   buildAnnouncementDetailed,
   chunkForDiscord,
+  fitOneDiscordMessage,
+  BOT_MESSAGE_LIMIT,
   installBlock,
   SECTION_META,
 };

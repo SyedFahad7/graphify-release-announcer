@@ -12,9 +12,9 @@ VOICE — sound human, not like AI:
   "game-changing", "delve", "elevate", "unleash", "supercharge". Just say what changed.
 - Vary sentence shape. Contractions are fine. Lead with the user-facing effect.
 
-COVERAGE + LENGTH (match Coolify):
-- Cover every important user-facing change. Prefer MANY short bullets over a few long paragraphs.
-- Coolify style: one short line per item (usually under ~90 chars). Lead with the effect.
+COVERAGE + LENGTH (match Coolify, but the bot can only send ONE message of 2000 characters):
+- Cover the important user-facing changes. Prefer MANY short bullets over a few long paragraphs.
+- One short line per item (under ~90 chars). The whole post, including install and the notes link, must fit in 1900 characters. Lead with the effect.
   Good: "watch paths support for preview deployments"
   Bad: a 40-word essay explaining the same thing.
 - Keep inline code (backticks) for commands, flags, files, APIs.
@@ -45,8 +45,7 @@ VOICE:
 
 COVERAGE + LENGTH (critical — match Coolify catch-ups):
 - Pull important items from EVERY release. The list should feel multi-release sized.
-- Coolify posts ~3800 chars with SHORT bullets (one tight line each, usually under ~90 chars).
-  That is how they fit one Discord message (Nitro 4000). Do the same: many short lines, not essays.
+- The Discord bot can only send one 2000-character message. Use SHORT bullets (one tight line each, usually under ~90 chars) so more items survive.
   Good: "PHP extractor no longer fuses same-named classes across namespaces"
   Bad: a long multi-clause explanation of the same bug.
 - Deduplicate only when the same change is restated.
