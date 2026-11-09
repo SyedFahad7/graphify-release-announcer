@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-import { pollNewReleases } from '../../../../lib/poll-releases';
+import { autoPublish } from '../../../../lib/auto-publish';
 
 function authorized(request) {
   const secret = process.env.CRON_SECRET || '';
@@ -15,7 +15,7 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const result = await pollNewReleases();
+    const result = await autoPublish();
     return Response.json(result, { status: result.ok ? 200 : 503 });
   } catch (err) {
     return Response.json({ ok: false, error: err.message }, { status: 500 });

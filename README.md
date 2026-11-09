@@ -173,8 +173,9 @@ The post matches the #production-releases format you already paste (title, `@Pro
 
 1. Run `supabase/migrations/002_release_drafts.sql` in the Supabase SQL editor.
 2. On the Vercel project, set `DISCORD_TOKEN`, `PRODUCTION_RELEASES_CHANNEL_ID`, `PRODUCTION_RELEASES_ROLE_ID`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `CRON_SECRET`.
-3. Cron hits `/api/releases/poll` at 09:00 and 21:00 IST. The first run only records the current release so old posts are not sent again.
-4. Open the site. A waiting release shows a **Send to Discord** button. Confirm, and the bot posts it. **Skip** drops it.
+3. A published GitHub release can hit `POST /api/releases/hook` (event: **Releases**, content type JSON, secret `RELEASE_WEBHOOK_SECRET` or `GITHUB_WEBHOOK_SECRET`). The hook answers immediately and posts in the background.
+4. The same check runs on the cron (`/api/releases/poll` at 09:00 and 21:00 IST) in case the hook was missed. It reads the last 100 messages in `#production-releases` plus the `release_drafts` rows. Tags already posted are skipped. One new stable release is posted alone. Two to four are combined into one catch-up. Drafts and prereleases are ignored. A first run with no history records the current release and does not backfill.
+5. The site **Send** button still posts whatever you are looking at.
 
 The Discord bot needs **Send Messages** in that channel and permission to mention the Production Releases role. Long posts are split into Discord-sized messages. Only the first message pings the role.
 
